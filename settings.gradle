@@ -8,7 +8,7 @@
  * in the user guide at https://docs.gradle.org/3.4.1/userguide/multi_project_builds.html
  */
 
-rootProject.name = "taxidemo"
+rootProject.name = "nautilus-iiot-demo"
 
 include "flinkprocessor"
 include "gateway"

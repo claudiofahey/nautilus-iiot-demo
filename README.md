@@ -1,5 +1,5 @@
 
-# Taxi Demo - Nautilus Streaming Analytics Demo
+# Nautilus Industrial IoT Demo
 
 ## Overview
 
