@@ -7,7 +7,7 @@ version: '2.1'
 services:
 
   pravega:
-    image: pravega/pravega:0.2.1
+    image: pravega/pravega:0.3.0-SNAPSHOT
     ports:
       - "9090:9090"
       - "12345:12345"

@@ -114,6 +114,21 @@ to interactively preprocess the data. This allows you to customize the events.
   It will write several files within a directory named data.json.
   These files can be used by the Streaming Data Generator.
 
+### Build Pravega and Connectors
+
+```
+cd pravega
+./gradlew install 
+./gradlew buildPravegaImage
+./gradlew startStandalone
+
+cd flink-connectors
+./gradlew install
+
+cd hadoop-connectors
+./gradlew install
+```
+
 ### Run Applications
 
 - Build the Gateway.
