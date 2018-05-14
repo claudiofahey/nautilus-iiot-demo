@@ -46,8 +46,9 @@ public class RawDataAggregator {
         @Override
         public Accumulator add(RawData value, Accumulator acc) {
             acc.lastAdded.timestamp = value.timestamp;
-            acc.lastAdded.tip_amount = value.tip_amount;
-            acc.lastAdded.total_amount = value.total_amount;
+            // TODO
+//            acc.lastAdded.tip_amount = value.tip_amount;
+//            acc.lastAdded.total_amount = value.total_amount;
             return acc;
         }
 

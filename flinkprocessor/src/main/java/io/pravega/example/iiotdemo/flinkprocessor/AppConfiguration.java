@@ -19,6 +19,7 @@ public class AppConfiguration {
 
     public static final String RUN_MODE_RAW_DATA_TO_ELASTICSEARCH = "rawdata-to-elasticsearch";
     public static final String RUN_MODE_EXTRACT_STATISTICS = "extract-statistics";
+    public static final String RUN_MODE_BATCH_STATISTICS = "batch-statistics";
 
     public PravegaArgs getPravegaArgs() {
         return pravegaArgs;

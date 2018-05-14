@@ -1,9 +1,11 @@
 package io.pravega.example.iiotdemo.flinkprocessor;
 
 import io.pravega.connectors.flink.FlinkPravegaInputFormat;
+import io.pravega.connectors.flink.serialization.JsonDeserializationSchema;
 import io.pravega.connectors.flink.serialization.UTF8StringDeserializationSchema;
 import io.pravega.connectors.flink.util.StreamId;
 import org.apache.flink.api.common.typeinfo.BasicTypeInfo;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.junit.Test;
@@ -34,6 +36,25 @@ public class BatchTest {
                         streams,
                         new UTF8StringDeserializationSchema()),
                 BasicTypeInfo.STRING_TYPE_INFO
+        );
+        strings.printToErr();
+    }
+
+    @Test
+    public void BatchTest2() throws Exception {
+        // TODO: Change to use new API being developed in https://github.com/pravega/flink-connectors/issues/62.
+        StreamId inputStreamId = new StreamId(pravegaScope, "data");
+        log.info("inputStreamId={}", inputStreamId);
+        ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
+        final Set<String> streams = new HashSet<>();
+        streams.add(inputStreamId.getName());
+        DataSet<RawData> strings = env.createInput(
+                new FlinkPravegaInputFormat<>(
+                        new URI(pravegaControllerURI),
+                        inputStreamId.getScope(),
+                        streams,
+                        new JsonDeserializationSchema<>(RawData.class)),
+                TypeInformation.of(RawData.class)
         );
         strings.printToErr();
     }
