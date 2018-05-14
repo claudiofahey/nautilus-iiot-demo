@@ -1,4 +1,4 @@
-package io.pravega.example.taxidemo.flinkprocessor;
+package io.pravega.example.iiotdemo.flinkprocessor;
 
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;

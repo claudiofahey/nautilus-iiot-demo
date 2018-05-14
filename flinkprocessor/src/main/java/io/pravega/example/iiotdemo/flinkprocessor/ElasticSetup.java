@@ -1,4 +1,4 @@
-package io.pravega.example.taxidemo.flinkprocessor;
+package io.pravega.example.iiotdemo.flinkprocessor;
 
 import org.apache.commons.io.IOUtils;
 import org.elasticsearch.ResourceAlreadyExistsException;

@@ -1,4 +1,4 @@
-package io.pravega.example.taxidemo.flinkprocessor;
+package io.pravega.example.iiotdemo.flinkprocessor;
 
 import io.pravega.connectors.flink.util.FlinkPravegaParams;
 import org.apache.flink.api.java.utils.ParameterTool;

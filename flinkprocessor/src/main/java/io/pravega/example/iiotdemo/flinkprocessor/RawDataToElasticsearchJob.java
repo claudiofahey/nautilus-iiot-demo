@@ -1,4 +1,4 @@
-package io.pravega.example.taxidemo.flinkprocessor;
+package io.pravega.example.iiotdemo.flinkprocessor;
 
 import io.pravega.connectors.flink.FlinkPravegaReader;
 import io.pravega.connectors.flink.serialization.UTF8StringDeserializationSchema;

@@ -1,4 +1,4 @@
-package io.pravega.example.taxidemo.flinkprocessor;
+package io.pravega.example.iiotdemo.flinkprocessor;
 
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.ScalingPolicy;

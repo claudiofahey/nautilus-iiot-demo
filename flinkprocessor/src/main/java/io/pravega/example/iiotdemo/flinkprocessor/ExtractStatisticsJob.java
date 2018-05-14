@@ -1,11 +1,10 @@
-package io.pravega.example.taxidemo.flinkprocessor;
+package io.pravega.example.iiotdemo.flinkprocessor;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.pravega.connectors.flink.FlinkPravegaReader;
 import io.pravega.connectors.flink.serialization.JsonDeserializationSchema;
 import io.pravega.connectors.flink.util.StreamId;
-import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
