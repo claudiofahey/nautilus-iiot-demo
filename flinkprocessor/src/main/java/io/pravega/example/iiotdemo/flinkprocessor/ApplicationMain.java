@@ -18,8 +18,13 @@ public class ApplicationMain {
                 job.run();
                 break;
             }
-            case AppConfiguration.RUN_MODE_EXTRACT_STATISTICS: {
-                ExtractStatisticsJob job = new ExtractStatisticsJob(appConfiguration);
+            case AppConfiguration.RUN_MODE_STREAM_STATISTICS_LOW_LEVEL: {
+                StreamStatisticsLowLevelJob job = new StreamStatisticsLowLevelJob(appConfiguration);
+                job.run();
+                break;
+            }
+            case AppConfiguration.RUN_MODE_STREAM_STATISTICS_TABLE_API: {
+                StreamStatisticsTableAPIJob job = new StreamStatisticsTableAPIJob(appConfiguration);
                 job.run();
                 break;
             }

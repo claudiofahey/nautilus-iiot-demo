@@ -6,6 +6,11 @@ import io.pravega.client.stream.StreamConfiguration;
 import io.pravega.connectors.flink.util.FlinkPravegaParams;
 import io.pravega.connectors.flink.util.StreamId;
 import org.apache.flink.api.java.ExecutionEnvironment;
+import org.apache.flink.runtime.state.filesystem.FsStateBackend;
+import org.apache.flink.runtime.state.memory.MemoryStateBackend;
+import org.apache.flink.streaming.api.CheckpointingMode;
+import org.apache.flink.streaming.api.TimeCharacteristic;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,8 +37,29 @@ public abstract class AbstractJob {
         streamManager.createStream(streamId.getScope(), streamId.getName(), streamConfig);
     }
 
-    public void initializeFlinkStreaming() throws Exception {
-
+    public StreamExecutionEnvironment initializeFlinkStreaming() throws Exception {
+        // Configure the Flink job environment
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        // Set parallelism, etc.
+        int parallelism = appConfiguration.getParallelism();
+        if (parallelism > 0) {
+            env.setParallelism(parallelism);
+        }
+        if (appConfiguration.isDisableOperatorChaining()) {
+            env.disableOperatorChaining();
+        }
+        if(!appConfiguration.isDisableCheckpoint()) {
+            long checkpointInterval = appConfiguration.getCheckpointInterval();
+            env.enableCheckpointing(checkpointInterval, CheckpointingMode.EXACTLY_ONCE);
+        }
+        log.info("Parallelism={}, MaxParallelism={}", env.getParallelism(), env.getMaxParallelism());
+        // We can't use MemoryStateBackend because it can't store our large state.
+        if (env.getStateBackend() == null || env.getStateBackend() instanceof MemoryStateBackend) {
+            log.warn("Using FsStateBackend");
+            env.setStateBackend(new FsStateBackend("file:///tmp/flink-state", true));
+        }
+        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        return env;
     }
 
     public ExecutionEnvironment initializeFlinkBatch() throws Exception {

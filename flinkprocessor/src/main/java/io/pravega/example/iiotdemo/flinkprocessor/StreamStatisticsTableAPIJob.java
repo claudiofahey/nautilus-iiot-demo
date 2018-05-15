@@ -7,10 +7,7 @@ import io.pravega.connectors.flink.serialization.JsonDeserializationSchema;
 import io.pravega.connectors.flink.util.StreamId;
 import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.api.common.functions.RuntimeContext;
-import org.apache.flink.runtime.state.filesystem.FsStateBackend;
-import org.apache.flink.runtime.state.memory.MemoryStateBackend;
-import org.apache.flink.streaming.api.CheckpointingMode;
-import org.apache.flink.streaming.api.TimeCharacteristic;
+import org.apache.flink.api.java.DataSet;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
@@ -21,6 +18,11 @@ import org.apache.flink.streaming.api.windowing.triggers.CountTrigger;
 import org.apache.flink.streaming.connectors.elasticsearch.ElasticsearchSinkFunction;
 import org.apache.flink.streaming.connectors.elasticsearch.RequestIndexer;
 import org.apache.flink.streaming.connectors.elasticsearch5.ElasticsearchSink;
+import org.apache.flink.table.api.Table;
+import org.apache.flink.table.api.TableEnvironment;
+import org.apache.flink.table.api.java.BatchTableEnvironment;
+import org.apache.flink.table.api.java.StreamTableEnvironment;
+import org.apache.flink.types.Row;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.client.Requests;
 import org.slf4j.Logger;
@@ -33,50 +35,27 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class ExtractStatisticsJob extends AbstractJob {
+// Uses the low-level Flink API to calculate streaming statistics.
+public class StreamStatisticsTableAPIJob extends AbstractJob {
 
-    private static Logger log = LoggerFactory.getLogger(ExtractStatisticsJob.class);
+    private static Logger log = LoggerFactory.getLogger(StreamStatisticsTableAPIJob.class);
 
-    public ExtractStatisticsJob(AppConfiguration appConfiguration) {
+    public StreamStatisticsTableAPIJob(AppConfiguration appConfiguration) {
         super(appConfiguration);
     }
 
     public void run() throws Exception {
-
-        final String jobName = AppConfiguration.RUN_MODE_EXTRACT_STATISTICS;
+        final String jobName = AppConfiguration.RUN_MODE_STREAM_STATISTICS_TABLE_API;
 
         if (appConfiguration.getElasticSearch().isSinkResults()) {
             new ElasticSetup(appConfiguration.getElasticSearch()).run();
         }
 
+        StreamExecutionEnvironment env = initializeFlinkStreaming();
+        StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
+
         StreamId inputStreamId = pravegaArgs.inputStream;
         log.info("inputStreamId={}", inputStreamId);
-//        createStream(inputStreamId);
-
-        // Configure the Flink job environment
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-
-        // Set parallelism, etc.
-        int parallelism = appConfiguration.getParallelism();
-        if (parallelism > 0) {
-            env.setParallelism(parallelism);
-        }
-        if (appConfiguration.isDisableOperatorChaining()) {
-            env.disableOperatorChaining();
-        }
-        if(!appConfiguration.isDisableCheckpoint()) {
-            long checkpointInterval = appConfiguration.getCheckpointInterval();
-            env.enableCheckpointing(checkpointInterval, CheckpointingMode.EXACTLY_ONCE);
-        }
-        log.info("Parallelism={}, MaxParallelism={}", env.getParallelism(), env.getMaxParallelism());
-
-        // We can't use MemoryStateBackend because it can't store our large state.
-        if (env.getStateBackend() == null || env.getStateBackend() instanceof MemoryStateBackend) {
-            log.warn("Using FsStateBackend");
-            env.setStateBackend(new FsStateBackend("file:///tmp/flink-state", true));
-        }
-
-        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         long startTime = 0;
         FlinkPravegaReader<RawData> flinkPravegaReader = flinkPravegaParams.newReader(
@@ -84,16 +63,11 @@ public class ExtractStatisticsJob extends AbstractJob {
                 startTime,
                 new JsonDeserializationSchema<>(RawData.class));
 
-        DataStream<RawData> events = env
+        DataStream<RawData> rawData = env
                 .addSource(flinkPravegaReader)
                 .name("EventReader");
 
-        if (appConfiguration.isEnableRebalance()) {
-            events = events.rebalance();
-            log.info("Rebalancing events");
-        }
-
-        events = events.assignTimestampsAndWatermarks(
+        rawData = rawData.assignTimestampsAndWatermarks(
                 new BoundedOutOfOrdernessTimestampExtractor<RawData>(Time.seconds(1)) {
             @Override
             public long extractTimestamp(RawData element) {
@@ -101,40 +75,34 @@ public class ExtractStatisticsJob extends AbstractJob {
             }
         });
 
-        events = events.filter((FilterFunction<RawData>) value -> {
-//            return value.trip_id.equals("517da645-9856-4592-9035-a04ddda00040");
-//            return value.trip_duration_minutes > 10.0;
-            return true;
-//            return value.event_type.equals("dropoff") && value.tip_amount > 0.0;
-        });
+        tableEnv.registerDataStream("rawData", rawData, "event_type,device_id,temp_celsius,vibration1,vibration2,timestamp.rowtime");
+        Table t = tableEnv.scan("rawData");
+        t.printSchema();
+//        DataStream<Row> ds = tableEnv.toAppendStream(t, Row.class);
+//        ds.printToErr();
 
-//        events.printToErr();
+        String sqlText =
+            "select\n" +
+            "  vib.device_id, tumble_start(vib.`timestamp`, interval '10' second) as timestamp_start,\n" +
+            "  avg(vib.vibration1) as vibration1, avg(temp.temp_celsius) as temp_celsius\n" +
+            "from\n" +
+            "  (select device_id, `timestamp`, vibration1 from rawData where event_type='vibration') vib,\n" +
+            "  (select device_id, `timestamp`, temp_celsius from rawData where event_type='temp') temp\n" +
+            "where\n" +
+            "    vib.device_id = temp.device_id and\n" +
+            "    vib.`timestamp` between temp.`timestamp` - interval '3' second and temp.`timestamp` + interval '3' second\n" +
+            "group by vib.device_id, tumble(vib.`timestamp`, interval '10' second)";
 
-        DataStream<RawDataAggregator.Result> aggEvents = events
-            .keyBy("trip_id")
-            .window(GlobalWindows.create())
-            .trigger(CountTrigger.of(1))
-            .aggregate(new RawDataAggregator.AggregateFunction());
+        log.info("sqlText=\n{}", sqlText);
+        t = tableEnv.sqlQuery(sqlText);
+        t.printSchema();
+        DataStream<Row> ds = tableEnv.toAppendStream(t, Row.class);
+        ds.printToErr();
 
-//        aggEvents.printToErr();
-
-        aggEvents = aggEvents.assignTimestampsAndWatermarks(
-                new BoundedOutOfOrdernessTimestampExtractor<RawDataAggregator.Result>(Time.seconds(1)) {
-                    @Override
-                    public long extractTimestamp(RawDataAggregator.Result element) {
-                        return element.timestamp;
-                    }
-                });
-
-        DataStream<StatisticsAggregator.Result> aggEvents2 = aggEvents
-            .windowAll(TumblingEventTimeWindows.of(Time.seconds(15)))
-            .aggregate(new StatisticsAggregator.AggregateFunction(), new StatisticsAggregator.AllWindowFunction());
-        aggEvents2.printToErr();
-
-        if (appConfiguration.getElasticSearch().isSinkResults()) {
-            ElasticsearchSink<StatisticsAggregator.Result> elasticSink = sinkToElasticSearch();
-            aggEvents2.addSink(elasticSink).name("Write to ElasticSearch");
-        }
+//        if (appConfiguration.getElasticSearch().isSinkResults()) {
+//            ElasticsearchStreamSink<StatisticsAggregator.Result> elasticSink = sinkToElasticSearch();
+//            aggEvents2.addSink(elasticSink).name("Write to ElasticSearch");
+//        }
 
         log.info("Executing {} job", jobName);
         env.execute(jobName);
