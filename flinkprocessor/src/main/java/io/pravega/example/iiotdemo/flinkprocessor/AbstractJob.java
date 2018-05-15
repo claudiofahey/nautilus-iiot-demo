@@ -5,6 +5,7 @@ import io.pravega.client.stream.ScalingPolicy;
 import io.pravega.client.stream.StreamConfiguration;
 import io.pravega.connectors.flink.util.FlinkPravegaParams;
 import io.pravega.connectors.flink.util.StreamId;
+import org.apache.flink.api.java.ExecutionEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,5 +30,22 @@ public abstract class AbstractJob {
                 .scalingPolicy(ScalingPolicy.byDataRate(pravegaArgs.targetRate, pravegaArgs.scaleFactor, pravegaArgs.minNumSegments))
                 .build();
         streamManager.createStream(streamId.getScope(), streamId.getName(), streamConfig);
+    }
+
+    public void initializeFlinkStreaming() throws Exception {
+
+    }
+
+    public ExecutionEnvironment initializeFlinkBatch() throws Exception {
+        // Configure the Flink job environment
+        ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
+
+        // Set parallelism, etc.
+        int parallelism = appConfiguration.getParallelism();
+        if (parallelism > 0) {
+            env.setParallelism(parallelism);
+        }
+        log.info("Parallelism={}", env.getParallelism());
+        return env;
     }
 }

@@ -6,6 +6,10 @@ import io.pravega.connectors.flink.util.StreamId;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
+import org.apache.flink.table.api.Table;
+import org.apache.flink.table.api.TableEnvironment;
+import org.apache.flink.table.api.java.BatchTableEnvironment;
+import org.apache.flink.types.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,29 +25,17 @@ public class BatchStatisticsJob extends AbstractJob {
     }
 
     public void run() throws Exception {
-
         final String jobName = AppConfiguration.RUN_MODE_BATCH_STATISTICS;
 
-        if (appConfiguration.getElasticSearch().isSinkResults()) {
-            new ElasticSetup(appConfiguration.getElasticSearch()).run();
-        }
+        ExecutionEnvironment env = initializeFlinkBatch();
+        BatchTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
 
         StreamId inputStreamId = pravegaArgs.inputStream;
         log.info("inputStreamId={}", inputStreamId);
 
-        // Configure the Flink job environment
-        ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
-
-        // Set parallelism, etc.
-        int parallelism = appConfiguration.getParallelism();
-        if (parallelism > 0) {
-            env.setParallelism(parallelism);
-        }
-        log.info("Parallelism={}", env.getParallelism());
-
         final Set<String> streams = new HashSet<>();
         streams.add(inputStreamId.getName());
-        DataSet<RawData> events = env.createInput(
+        DataSet<RawData> rawData = env.createInput(
                 new FlinkPravegaInputFormat<>(
                         flinkPravegaParams.getControllerUri(),
                         inputStreamId.getScope(),
@@ -52,17 +44,27 @@ public class BatchStatisticsJob extends AbstractJob {
                 TypeInformation.of(RawData.class)
         ).name("EventReader");
 
-        if (appConfiguration.isEnableRebalance()) {
-            events = events.rebalance();
-            log.info("Rebalancing events");
-        }
+        tableEnv.registerDataSet("rawData", rawData);
+        Table t = tableEnv.scan("rawData");
+        t.printSchema();
 
-        events.printToErr();
+        tableEnv.registerFunction("TimestampFromLong", new TimestampFromLong());
 
-        // TODO: Perform aggregation.
-//                events
-//            .groupBy((KeySelector<RawData, String>) data -> data.device_id)
-//            .aggregate(new RawDataAggregator.AggregateFunction());
+        t = tableEnv.sqlQuery(
+                "select TimestampFromLong(`timestamp`) as `timestamp`, device_id, temp_celsius, vibration1 from rawData"
+        );
+        t.printSchema();
+        DataSet<Row> ds = tableEnv.toDataSet(t, Row.class);
+        tableEnv.registerDataSet("cleanData", ds);
+
+        t = tableEnv.sqlQuery(
+                "select device_id, tumble_start(`timestamp`, interval '30' second), avg(vibration1) from cleanData group by device_id, tumble(`timestamp`, interval '30' second)"
+        );
+        t.printSchema();
+        ds = tableEnv.toDataSet(t, Row.class);
+        ds.printOnTaskManager("STATISTICS");
+
+        // TODO: Output to a database.
 
         log.info("Executing {} job", jobName);
         env.execute(jobName);

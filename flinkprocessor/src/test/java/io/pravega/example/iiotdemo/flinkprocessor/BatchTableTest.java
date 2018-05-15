@@ -9,7 +9,6 @@ import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.table.api.Table;
 import org.apache.flink.table.api.TableEnvironment;
 import org.apache.flink.table.api.java.BatchTableEnvironment;
-import org.apache.flink.table.functions.ScalarFunction;
 import org.apache.flink.types.Row;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -18,8 +17,6 @@ import org.slf4j.LoggerFactory;
 import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
-
-import static org.apache.flink.api.common.typeinfo.SqlTimeTypeInfo.TIMESTAMP;
 
 public class BatchTableTest {
     private static Logger log = LoggerFactory.getLogger(BatchTableTest.class);
@@ -94,15 +91,5 @@ public class BatchTableTest {
         t.printSchema();
         ds = tableEnv.toDataSet(t, Row.class);
         ds.print();
-    }
-
-    public static class TimestampFromLong extends ScalarFunction {
-        public long eval(long t) {
-            return t;
-        }
-
-        public TypeInformation<?> getResultType(Class<?>[] signature) {
-            return TIMESTAMP;
-        }
     }
 }

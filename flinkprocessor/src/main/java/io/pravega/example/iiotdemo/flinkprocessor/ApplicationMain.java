@@ -6,15 +6,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ApplicationMain {
-
     private static Logger log = LoggerFactory.getLogger( ApplicationMain.class );
     private static final AppConfiguration appConfiguration = new AppConfiguration();
 
     public static void main(String... args) throws Exception {
-        log.info("NETTY={}", io.netty.util.Version.identify());
-
         parseConfigurations(args);
-
         String runMode = appConfiguration.getRunMode();
         switch (runMode) {
             case AppConfiguration.RUN_MODE_RAW_DATA_TO_ELASTICSEARCH: {
@@ -24,6 +20,11 @@ public class ApplicationMain {
             }
             case AppConfiguration.RUN_MODE_EXTRACT_STATISTICS: {
                 ExtractStatisticsJob job = new ExtractStatisticsJob(appConfiguration);
+                job.run();
+                break;
+            }
+            case AppConfiguration.RUN_MODE_BATCH_STATISTICS: {
+                BatchStatisticsJob job = new BatchStatisticsJob(appConfiguration);
                 job.run();
                 break;
             }
@@ -48,7 +49,7 @@ public class ApplicationMain {
         FlinkPravegaParams flinkPravegaParams = new FlinkPravegaParams(ParameterTool.fromArgs(args));
         appConfiguration.setFlinkPravegaParams(flinkPravegaParams);
 
-        String scope = params.get("scope", "taxidemo");
+        String scope = params.get("scope", "iiotdemo");
         appConfiguration.getPravegaArgs().inputStream =
                 flinkPravegaParams.getStreamFromParam("input.stream", scope + "/rawdata");
 
