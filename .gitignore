@@ -3,5 +3,5 @@
 .project
 .gradle
 data/
+out/
 *.iml
-
