@@ -12,3 +12,4 @@ rootProject.name = "nautilus-iiot-demo"
 
 include "flinkprocessor"
 include "gateway"
+include 'sparkprocessor'
