@@ -32,15 +32,7 @@ dependencies {
     compile "ch.qos.logback:logback-core:1.2.3"
     compile "ch.qos.logback:logback-classic:1.2.3"
     compile "net.logstash.logback:logstash-logback-encoder:4.11"
-//    compile "io.pravega:pravega-client:${pravegaVersion}"
-
-    // Below commented out because we get a GRPC version conflict.
-//    compile "io.pravega:hadoop-connectors:${pravegaHadoopConnectorVersion}"
-//    compile "org.apache.hadoop:hadoop-common:${hadoopVersion}"
-
-    // common-library dependencies
-//    compile "com.google.guava:guava:20.0"
-//    compile "org.xerial:sqlite-jdbc:3.20.0"
+    compile "io.pravega:hadoop-connectors:${pravegaHadoopConnectorVersion}"
 
     testCompile group: "junit", name: "junit", version: "4.11"
 }
