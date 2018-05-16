@@ -96,10 +96,8 @@ public class ElasticsearchStreamSink implements Serializable {
         config.put("client.transport.sniff", "false");
         List<InetSocketAddress> transports = new ArrayList<>();
         transports.add(new InetSocketAddress(InetAddress.getByName(host), port));
-
-        DataStream<Row> ds = table.tableEnv()..toAppendStream(table, Row.class);
-
-        return new ElasticsearchSink<>(config, transports, new ResultSinkFunction());
+//        DataStream<Row> ds = table.tableEnv()..toAppendStream(table, Row.class);
+//        return new ElasticsearchSink<>(config, transports, new ResultSinkFunction());
     }
 
     private class ResultSinkFunction implements ElasticsearchSinkFunction<Row> {

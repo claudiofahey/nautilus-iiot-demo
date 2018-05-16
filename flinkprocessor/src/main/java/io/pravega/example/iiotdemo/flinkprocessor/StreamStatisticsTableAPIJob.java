@@ -65,6 +65,7 @@ public class StreamStatisticsTableAPIJob extends AbstractJob {
             "    vib.device_id = temp.device_id and\n" +
             "    vib.`timestamp` between temp.`timestamp` - interval '3' second and temp.`timestamp` + interval '3' second\n" +
             "group by vib.device_id, tumble(vib.`timestamp`, interval '10' second)";
+//            "select * from rawData";
 
         log.info("sqlText=\n{}", sqlText);
         t = tableEnv.sqlQuery(sqlText);
@@ -73,18 +74,16 @@ public class StreamStatisticsTableAPIJob extends AbstractJob {
         ds.printToErr();
 
         if (appConfiguration.getElasticSearch().isSinkResults()) {
-            ElasticsearchStreamSink esSink = new ElasticsearchStreamSink(
+            ElasticsearchTableSink esSink = new ElasticsearchTableSink(
+                    "timestamp",    // TODO: add device_id
                     appConfiguration.getElasticSearch().getHost(),
                     appConfiguration.getElasticSearch().getPort(),
                     appConfiguration.getElasticSearch().getCluster(),
                     "iiotdemo-stream-statistics-table-api",
                     "record",
-                    false,
-                    -1,
-                    t
+                    false
             );
-            esSink.setup();
-            esSink.addSink().name("Write to ElasticSearch");
+            t.writeToSink(esSink);
         }
 
         log.info("Executing {} job", jobName);
