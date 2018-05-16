@@ -13,18 +13,13 @@ public class ApplicationMain {
         parseConfigurations(args);
         String runMode = appConfiguration.getRunMode();
         switch (runMode) {
-            case AppConfiguration.RUN_MODE_RAW_DATA_TO_ELASTICSEARCH: {
-                RawDataToElasticsearchJob job = new RawDataToElasticsearchJob(appConfiguration);
+            case AppConfiguration.RUN_MODE_STREAM_RAW_DATA: {
+                StreamRawDataToElasticsearchJob job = new StreamRawDataToElasticsearchJob(appConfiguration);
                 job.run();
                 break;
             }
-            case AppConfiguration.RUN_MODE_STREAM_STATISTICS_LOW_LEVEL: {
-                StreamStatisticsLowLevelJob job = new StreamStatisticsLowLevelJob(appConfiguration);
-                job.run();
-                break;
-            }
-            case AppConfiguration.RUN_MODE_STREAM_STATISTICS_TABLE_API: {
-                StreamStatisticsTableAPIJob job = new StreamStatisticsTableAPIJob(appConfiguration);
+            case AppConfiguration.RUN_MODE_STREAM_STATISTICS: {
+                StreamStatisticsToElasticsearchJob job = new StreamStatisticsToElasticsearchJob(appConfiguration);
                 job.run();
                 break;
             }
@@ -44,7 +39,7 @@ public class ApplicationMain {
         ParameterTool params = ParameterTool.fromArgs(args);
         log.info("Parameter Tool: {}", params.toMap());
 
-        appConfiguration.setRunMode(params.get("runMode", AppConfiguration.RUN_MODE_RAW_DATA_TO_ELASTICSEARCH));
+        appConfiguration.setRunMode(params.get("runMode", AppConfiguration.RUN_MODE_STREAM_RAW_DATA));
         appConfiguration.setParallelism(params.getInt("job.parallelism", 1));
         appConfiguration.setCheckpointInterval(params.getLong("job.checkpointInterval", 10000));     // milliseconds
         appConfiguration.setDisableCheckpoint(params.getBoolean("job.disableCheckpoint", false));
@@ -79,15 +74,15 @@ public class ApplicationMain {
         elasticSearch.setCluster(params.get("elastic-cluster", "elastic"));
 
         // elastic-index: The name of the Elastic index to sink to.
-        elasticSearch.setIndex(params.get("elastic-index", "taxidemo-rawdata"));
+        elasticSearch.setIndex(params.get("elastic-index", ""));
 
         // elastic-type: The name of the type to sink.
-        elasticSearch.setType(params.get("elastic-type", "event"));
+        elasticSearch.setType(params.get("elastic-type", ""));
     }
 
     private static void printUsage() {
         final String usage = "java ApplicationMain " +
-                "--runMode <annotate|decode|averagespeed|train|predict> " +
+                "--runMode <runMode> " +
                 "--controller <tcp://PRAVEGA_CONTROLLER_IP:9091/>";
         log.warn("Usage: {}", usage);
     }

@@ -23,7 +23,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-// Based on https://github.com/apache/flink/blob/master/flink-connectors/flink-jdbc/src/main/java/org/apache/flink/api/java/io/jdbc/JDBCAppendTableSink.java.
 public class ElasticsearchTableSink implements AppendStreamTableSink<Row>, Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(ElasticsearchTableSink.class);
 
@@ -118,11 +117,14 @@ public class ElasticsearchTableSink implements AppendStreamTableSink<Row>, Seria
                 return null;
             }
             LOG.info("id={}, source={}", id, source);
-            return Requests.indexRequest()
+            IndexRequest request = Requests.indexRequest()
                     .index(index)
                     .type(type)
-                    .id(id)
                     .source(source);
+            if (id != null) {
+                request = request.id(id);
+            }
+            return request;
         }
     }
 }

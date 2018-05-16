@@ -17,9 +17,8 @@ public class AppConfiguration {
     private boolean disableOperatorChaining;
     private boolean enableRebalance;
 
-    public static final String RUN_MODE_RAW_DATA_TO_ELASTICSEARCH = "rawdata-to-elasticsearch";
-    public static final String RUN_MODE_STREAM_STATISTICS_LOW_LEVEL = "stream-statistics-low-level";
-    public static final String RUN_MODE_STREAM_STATISTICS_TABLE_API = "stream-statistics-table-api";
+    public static final String RUN_MODE_STREAM_RAW_DATA = "stream-raw-data";
+    public static final String RUN_MODE_STREAM_STATISTICS = "stream-statistics";
     public static final String RUN_MODE_BATCH_STATISTICS = "batch-statistics";
 
     public PravegaArgs getPravegaArgs() {

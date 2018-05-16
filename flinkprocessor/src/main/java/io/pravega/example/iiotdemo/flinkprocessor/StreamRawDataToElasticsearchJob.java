@@ -14,17 +14,16 @@ import org.apache.flink.types.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-// Uses the Flink table API to calculate streaming statistics.
-public class StreamStatisticsTableAPIJob extends AbstractJob {
+public class StreamRawDataToElasticsearchJob extends AbstractJob {
 
-    private static Logger log = LoggerFactory.getLogger(StreamStatisticsTableAPIJob.class);
+    private static Logger log = LoggerFactory.getLogger(StreamRawDataToElasticsearchJob.class);
 
-    public StreamStatisticsTableAPIJob(AppConfiguration appConfiguration) {
+    public StreamRawDataToElasticsearchJob(AppConfiguration appConfiguration) {
         super(appConfiguration);
     }
 
     public void run() throws Exception {
-        final String jobName = AppConfiguration.RUN_MODE_STREAM_STATISTICS_TABLE_API;
+        final String jobName = AppConfiguration.RUN_MODE_STREAM_RAW_DATA;
 
         StreamExecutionEnvironment env = initializeFlinkStreaming();
         StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
@@ -44,42 +43,24 @@ public class StreamStatisticsTableAPIJob extends AbstractJob {
 
         rawData = rawData.assignTimestampsAndWatermarks(
                 new BoundedOutOfOrdernessTimestampExtractor<RawData>(Time.seconds(1)) {
-            @Override
-            public long extractTimestamp(RawData element) {
-                return element.timestamp;
-            }
-        });
+                    @Override
+                    public long extractTimestamp(RawData element) {
+                        return element.timestamp;
+                    }
+                });
 
         tableEnv.registerDataStream("rawData", rawData, "event_type,device_id,temp_celsius,vibration1,vibration2,timestamp.rowtime");
         Table t = tableEnv.scan("rawData");
         t.printSchema();
 
-        String sqlText =
-            "select\n" +
-            "  date_format(tumble_end(vib.`timestamp`, interval '10' second), '%Y%d%m%H%i%s') || '-' || vib.device_id as id,\n" +
-            "  vib.device_id,\n" +
-            "  tumble_end(vib.`timestamp`, interval '10' second) as `timestamp`,\n" +
-            "  avg(vib.vibration1) as vibration1,\n" +
-            "  avg(vib.vibration2) as vibration2,\n" +
-            "  avg(temp.temp_celsius) as temp_celsius\n" +
-            "from\n" +
-            "  (select device_id, `timestamp`, vibration1, vibration2 from rawData where event_type='vibration') vib,\n" +
-            "  (select device_id, `timestamp`, temp_celsius from rawData where event_type='temp') temp\n" +
-            "where\n" +
-            "    vib.device_id = temp.device_id and\n" +
-            "    vib.`timestamp` between temp.`timestamp` - interval '3' second and temp.`timestamp` + interval '3' second\n" +
-            "group by\n" +
-            "  vib.device_id,\n" +
-            "  tumble(vib.`timestamp`, interval '10' second)";
-
-        log.info("sqlText=\n{}", sqlText);
+        String sqlText = "select * from rawData";
         t = tableEnv.sqlQuery(sqlText);
         t.printSchema();
         DataStream<Row> ds = tableEnv.toAppendStream(t, Row.class);
         ds.printToErr();
 
         if (appConfiguration.getElasticSearch().isSinkResults()) {
-            String index = "iiotdemo-stream-statistics-table-api";
+            String index = "iiotdemo-raw-data";
             String type = "record";
             ElasticsearchSetup esSetup = new ElasticsearchSetup(
                     appConfiguration.getElasticSearch().getHost(),
@@ -96,7 +77,7 @@ public class StreamStatisticsTableAPIJob extends AbstractJob {
                     appConfiguration.getElasticSearch().getCluster(),
                     index,
                     type,
-                    "id"
+                    null
             );
             t.writeToSink(esSink);
         }

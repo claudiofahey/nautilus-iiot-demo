@@ -17,6 +17,7 @@ import java.net.URL;
 import java.util.Collections;
 import java.util.Map;
 
+// Creates a new Elasticsearch index.
 public class ElasticsearchSetup implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(ElasticsearchSetup.class);
 

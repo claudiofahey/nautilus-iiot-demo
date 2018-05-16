@@ -5,10 +5,16 @@
         "timestamp": {
           "type": "date"
         },
+        "event_type": {
+          "type": "keyword"
+        },
         "device_id": {
           "type": "keyword"
         },
         "vibration1": {
+          "type": "float"
+        },
+        "vibration2": {
           "type": "float"
         },
         "temp_celsius": {

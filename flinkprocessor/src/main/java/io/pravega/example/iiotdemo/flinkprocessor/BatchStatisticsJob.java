@@ -57,9 +57,10 @@ public class BatchStatisticsJob extends AbstractJob {
         DataSet<Row> ds = tableEnv.toDataSet(t, Row.class);
         tableEnv.registerDataSet("cleanData", ds);
 
-        t = tableEnv.sqlQuery(
-                "select device_id, tumble_start(`timestamp`, interval '30' second), avg(vibration1) from cleanData group by device_id, tumble(`timestamp`, interval '30' second)"
-        );
+        String sqlText =
+            "select device_id, tumble_start(`timestamp`, interval '30' second), avg(vibration1)\n" +
+            "from cleanData group by device_id, tumble(`timestamp`, interval '30' second)";
+        t = tableEnv.sqlQuery(sqlText);
         t.printSchema();
         ds = tableEnv.toDataSet(t, Row.class);
         ds.printOnTaskManager("STATISTICS");
