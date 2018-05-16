@@ -29,25 +29,23 @@ public class ElasticsearchTableSink implements AppendStreamTableSink<Row>, Seria
 
     private String[] fieldNames;
     private TypeInformation[] fieldTypes;
-    private String idFieldName;
     private String host;
     private int port;
     private String cluster;
     private String index;
     private String type;
-    private boolean isDeleteIndex;
+    private String idFieldName;
 
     public ElasticsearchTableSink() {
     }
 
-    public ElasticsearchTableSink(String idFieldName, String host, int port, String cluster, String index, String type, boolean isDeleteIndex) {
-        this.idFieldName = idFieldName;
+    public ElasticsearchTableSink(String host, int port, String cluster, String index, String type, String idFieldName) {
         this.host = host;
         this.port = port;
         this.cluster = cluster;
         this.index = index;
         this.type = type;
-        this.isDeleteIndex = isDeleteIndex;
+        this.idFieldName = idFieldName;
     }
 
     @Override
@@ -70,13 +68,12 @@ public class ElasticsearchTableSink implements AppendStreamTableSink<Row>, Seria
         ElasticsearchTableSink copy = new ElasticsearchTableSink();
         copy.fieldNames = fieldNames;
         copy.fieldTypes = fieldTypes;
-        copy.idFieldName = idFieldName;
         copy.host = host;
         copy.port = port;
         copy.cluster = cluster;
         copy.index = index;
         copy.type = type;
-        copy.isDeleteIndex = isDeleteIndex;
+        copy.idFieldName = idFieldName;
         return copy;
     }
 

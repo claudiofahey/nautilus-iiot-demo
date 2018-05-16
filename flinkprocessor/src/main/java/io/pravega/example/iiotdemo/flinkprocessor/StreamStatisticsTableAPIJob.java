@@ -56,16 +56,21 @@ public class StreamStatisticsTableAPIJob extends AbstractJob {
 
         String sqlText =
             "select\n" +
-            "  vib.device_id, tumble_end(vib.`timestamp`, interval '10' second) as `timestamp`,\n" +
-            "  avg(vib.vibration1) as vibration1, avg(temp.temp_celsius) as temp_celsius\n" +
+            "  date_format(tumble_end(vib.`timestamp`, interval '10' second), '%Y%d%m%H%i%s') || '-' || vib.device_id as id,\n" +
+            "  vib.device_id,\n" +
+            "  tumble_end(vib.`timestamp`, interval '10' second) as `timestamp`,\n" +
+            "  avg(vib.vibration1) as vibration1,\n" +
+            "  avg(vib.vibration2) as vibration2,\n" +
+            "  avg(temp.temp_celsius) as temp_celsius\n" +
             "from\n" +
-            "  (select device_id, `timestamp`, vibration1 from rawData where event_type='vibration') vib,\n" +
+            "  (select device_id, `timestamp`, vibration1, vibration2 from rawData where event_type='vibration') vib,\n" +
             "  (select device_id, `timestamp`, temp_celsius from rawData where event_type='temp') temp\n" +
             "where\n" +
             "    vib.device_id = temp.device_id and\n" +
             "    vib.`timestamp` between temp.`timestamp` - interval '3' second and temp.`timestamp` + interval '3' second\n" +
-            "group by vib.device_id, tumble(vib.`timestamp`, interval '10' second)";
-//            "select * from rawData";
+            "group by\n" +
+            "  vib.device_id,\n" +
+            "  tumble(vib.`timestamp`, interval '10' second)";
 
         log.info("sqlText=\n{}", sqlText);
         t = tableEnv.sqlQuery(sqlText);
@@ -74,14 +79,24 @@ public class StreamStatisticsTableAPIJob extends AbstractJob {
         ds.printToErr();
 
         if (appConfiguration.getElasticSearch().isSinkResults()) {
-            ElasticsearchTableSink esSink = new ElasticsearchTableSink(
-                    "timestamp",    // TODO: add device_id
+            String index = "iiotdemo-stream-statistics-table-api";
+            String type = "record";
+            ElasticsearchSetup esSetup = new ElasticsearchSetup(
                     appConfiguration.getElasticSearch().getHost(),
                     appConfiguration.getElasticSearch().getPort(),
                     appConfiguration.getElasticSearch().getCluster(),
-                    "iiotdemo-stream-statistics-table-api",
-                    "record",
-                    false
+                    index,
+                    type,
+                    appConfiguration.getElasticSearch().isDeleteIndex()
+            );
+            esSetup.setup();
+            ElasticsearchTableSink esSink = new ElasticsearchTableSink(
+                    appConfiguration.getElasticSearch().getHost(),
+                    appConfiguration.getElasticSearch().getPort(),
+                    appConfiguration.getElasticSearch().getCluster(),
+                    index,
+                    type,
+                    "id"
             );
             t.writeToSink(esSink);
         }

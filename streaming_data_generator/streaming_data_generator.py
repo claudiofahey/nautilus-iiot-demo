@@ -40,7 +40,7 @@ def single_generator_process(options, device_id):
     # Create random parameters for this device.
     temp_celsius_low = random.uniform(0.0, 50.0)
     temp_celsius_high = random.uniform(50.0, 100.0)
-    temp_celsius_period_ms = random.uniform(30000.0, 120000.0)
+    temp_celsius_period_ms = random.uniform(120000.0, 600000.0)
     temp_celsius_offset_ms = random.uniform(0.0, 1000000.0)
     report_period_sec = random.uniform(0.75, 1.5)
     print('%s: temp_celsius_low=%f, temp_celsius_high=%f, temp_celsius_period_ms=%f, temp_celsius_offset_ms=%f, report_period_sec=%f' %
