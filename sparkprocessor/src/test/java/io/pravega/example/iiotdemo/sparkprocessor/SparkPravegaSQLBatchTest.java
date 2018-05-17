@@ -56,11 +56,9 @@ public class SparkPravegaSQLBatchTest {
         SparkContext sc = spark.sparkContext();
 
         StructType schema = new StructType()
-                .add("timestamp","string")
+                .add("timestamp","long")
                 .add("event_type","string");
-        String schemaText = schema.json();
-        log.info("schemaText={}", schemaText);
-        schema = null;
+//        schema = null;
 
         Configuration conf = new Configuration();
         conf.setStrings(PravegaInputFormat.SCOPE_NAME, pravegaScope);
