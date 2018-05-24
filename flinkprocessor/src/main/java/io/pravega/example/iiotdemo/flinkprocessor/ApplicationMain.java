@@ -23,6 +23,11 @@ public class ApplicationMain {
                 job.run();
                 break;
             }
+            case AppConfiguration.RUN_MODE_STREAM_TO_CONSOLE: {
+                StreamToConsoleJob job = new StreamToConsoleJob(appConfiguration);
+                job.run();
+                break;
+            }
             case AppConfiguration.RUN_MODE_BATCH_STATISTICS: {
                 BatchStatisticsJob job = new BatchStatisticsJob(appConfiguration);
                 job.run();

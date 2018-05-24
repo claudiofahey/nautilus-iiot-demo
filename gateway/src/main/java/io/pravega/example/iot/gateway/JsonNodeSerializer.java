@@ -8,6 +8,9 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 
+/**
+ * An implementation of {@link Serializer} that converts {@link JsonNode} to JSON with UTF-8 encoding.
+ */
 public class JsonNodeSerializer implements Serializer<JsonNode>, Serializable {
 
     private final ObjectMapper objectMapper;

@@ -19,6 +19,7 @@ public class AppConfiguration {
 
     public static final String RUN_MODE_STREAM_RAW_DATA = "stream-raw-data";
     public static final String RUN_MODE_STREAM_STATISTICS = "stream-statistics";
+    public static final String RUN_MODE_STREAM_TO_CONSOLE = "stream-to-console";
     public static final String RUN_MODE_BATCH_STATISTICS = "batch-statistics";
 
     public PravegaArgs getPravegaArgs() {
