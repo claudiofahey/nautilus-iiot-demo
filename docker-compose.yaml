@@ -39,3 +39,9 @@ services:
       - http://gateway:3000/data
       - --num-devices
       - "2"
+
+  prediction_web_service_python:
+    build:
+      context: prediction_web_service_python
+    ports:
+      - "5001:80"
