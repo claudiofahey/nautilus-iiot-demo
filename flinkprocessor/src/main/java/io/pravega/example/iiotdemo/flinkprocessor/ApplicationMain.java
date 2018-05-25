@@ -1,94 +1,16 @@
 package io.pravega.example.iiotdemo.flinkprocessor;
 
-import io.pravega.connectors.flink.util.FlinkPravegaParams;
-import org.apache.flink.api.java.utils.ParameterTool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ApplicationMain {
-    private static Logger log = LoggerFactory.getLogger( ApplicationMain.class );
-    private static final AppConfiguration appConfiguration = new AppConfiguration();
+    private static Logger log = LoggerFactory.getLogger(ApplicationMain.class);
 
     public static void main(String... args) throws Exception {
-        parseConfigurations(args);
-        String runMode = appConfiguration.getRunMode();
-        switch (runMode) {
-            case AppConfiguration.RUN_MODE_STREAM_RAW_DATA: {
-                StreamRawDataToElasticsearchJob job = new StreamRawDataToElasticsearchJob(appConfiguration);
-                job.run();
-                break;
-            }
-            case AppConfiguration.RUN_MODE_STREAM_STATISTICS: {
-                StreamStatisticsToElasticsearchJob job = new StreamStatisticsToElasticsearchJob(appConfiguration);
-                job.run();
-                break;
-            }
-            case AppConfiguration.RUN_MODE_STREAM_TO_CONSOLE: {
-                StreamToConsoleJob job = new StreamToConsoleJob(appConfiguration);
-                job.run();
-                break;
-            }
-            case AppConfiguration.RUN_MODE_BATCH_STATISTICS: {
-                BatchStatisticsJob job = new BatchStatisticsJob(appConfiguration);
-                job.run();
-                break;
-            }
-            default: {
-                printUsage();
-                throw new IllegalArgumentException("invalid runMode");
-            }
-        }
-    }
-
-    private static void parseConfigurations(String[] args) throws Exception {
-        ParameterTool params = ParameterTool.fromArgs(args);
-        log.info("Parameter Tool: {}", params.toMap());
-
-        appConfiguration.setRunMode(params.get("runMode", AppConfiguration.RUN_MODE_STREAM_RAW_DATA));
-        appConfiguration.setParallelism(params.getInt("job.parallelism", 1));
-        appConfiguration.setCheckpointInterval(params.getLong("job.checkpointInterval", 10000));     // milliseconds
-        appConfiguration.setDisableCheckpoint(params.getBoolean("job.disableCheckpoint", false));
-        appConfiguration.setDisableOperatorChaining(params.getBoolean("job.disableOperatorChaining", false));
-        appConfiguration.setEnableRebalance(params.getBoolean("rebalance", false));
-
-        FlinkPravegaParams flinkPravegaParams = new FlinkPravegaParams(ParameterTool.fromArgs(args));
-        appConfiguration.setFlinkPravegaParams(flinkPravegaParams);
-
-        String scope = params.get("scope", "iiotdemo");
-        appConfiguration.getPravegaArgs().inputStream =
-                flinkPravegaParams.getStreamFromParam("input.stream", scope + "/rawdata");
-
-        appConfiguration.getPravegaArgs().targetRate = params.getInt("scaling.targetRate", 100000);  // Data rate in KB/sec
-        appConfiguration.getPravegaArgs().scaleFactor = params.getInt("scaling.scaleFactor", 2);
-        appConfiguration.getPravegaArgs().minNumSegments = params.getInt("scaling.minNumSegments", 12);
-
-        AppConfiguration.ElasticSearch elasticSearch = appConfiguration.getElasticSearch();
-
-        // elastic-sink: Whether to sink the results to Elastic Search or not.
-        elasticSearch.setSinkResults(params.getBoolean("elastic-sink", false));
-
-        elasticSearch.setDeleteIndex(params.getBoolean("elastic-delete-index", false));
-
-        // elastic-host: Host of the Elastic instance to sink to.
-        elasticSearch.setHost(params.get("elastic-host", "master.elastic.l4lb.thisdcos.directory"));
-
-        // elastic-port: Port of the Elastic instance to sink to.
-        elasticSearch.setPort(params.getInt("elastic-port", 9300));
-
-        // elastic-cluster: The name of the Elastic cluster to sink to.
-        elasticSearch.setCluster(params.get("elastic-cluster", "elastic"));
-
-        // elastic-index: The name of the Elastic index to sink to.
-        elasticSearch.setIndex(params.get("elastic-index", ""));
-
-        // elastic-type: The name of the type to sink.
-        elasticSearch.setType(params.get("elastic-type", ""));
-    }
-
-    private static void printUsage() {
-        final String usage = "java ApplicationMain " +
-                "--runMode <runMode> " +
-                "--controller <tcp://PRAVEGA_CONTROLLER_IP:9091/>";
-        log.warn("Usage: {}", usage);
+        AppConfiguration appConfiguration = new AppConfiguration(args);
+        String runMode = appConfiguration.getJobClass();
+        Class<?> jobClass = Class.forName(runMode);
+        AbstractJob job = (AbstractJob) jobClass.getConstructor(AppConfiguration.class).newInstance(appConfiguration);
+        job.run();
     }
 }

@@ -3,8 +3,6 @@ package io.pravega.example.iiotdemo.flinkprocessor;
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.ScalingPolicy;
 import io.pravega.client.stream.StreamConfiguration;
-import io.pravega.connectors.flink.util.FlinkPravegaParams;
-import io.pravega.connectors.flink.util.StreamId;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.runtime.state.memory.MemoryStateBackend;
@@ -14,27 +12,25 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public abstract class AbstractJob {
-
-    private static Logger log = LoggerFactory.getLogger( AbstractJob.class );
+public abstract class AbstractJob implements Runnable {
+    private static Logger log = LoggerFactory.getLogger(AbstractJob.class);
 
     protected final AppConfiguration appConfiguration;
-    protected final FlinkPravegaParams flinkPravegaParams;
-    protected final AppConfiguration.PravegaArgs pravegaArgs;
 
     public AbstractJob(AppConfiguration appConfiguration) {
         this.appConfiguration = appConfiguration;
-        this.flinkPravegaParams = appConfiguration.getFlinkPravegaParams();
-        this.pravegaArgs = appConfiguration.getPravegaArgs();
     }
 
-    public void createStream(StreamId streamId) {
-        StreamManager streamManager = StreamManager.create(flinkPravegaParams.getControllerUri());
-        streamManager.createScope(streamId.getScope());
-        StreamConfiguration streamConfig = StreamConfiguration.builder()
-                .scalingPolicy(ScalingPolicy.byDataRate(pravegaArgs.targetRate, pravegaArgs.scaleFactor, pravegaArgs.minNumSegments))
-                .build();
-        streamManager.createStream(streamId.getScope(), streamId.getName(), streamConfig);
+    public void createStream(AppConfiguration.StreamConfig streamConfig) {
+        try(StreamManager streamManager = StreamManager.create(appConfiguration.getPravegaConfig().getClientConfig())) {
+            // create the requested scope (if necessary)
+            streamManager.createScope(streamConfig.stream.getScope());
+            // create the requested stream
+            StreamConfiguration streamConfiguration = StreamConfiguration.builder()
+                    .scalingPolicy(ScalingPolicy.byDataRate(streamConfig.targetRate, streamConfig.scaleFactor, streamConfig.minNumSegments))
+                    .build();
+            streamManager.createStream(streamConfig.stream.getScope(), streamConfig.stream.getStreamName(), streamConfiguration);
+        }
     }
 
     public StreamExecutionEnvironment initializeFlinkStreaming() throws Exception {

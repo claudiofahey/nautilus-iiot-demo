@@ -60,7 +60,6 @@ and <https://docs.docker.com/compose/install/>.
 ```
 cd pravega
 ./gradlew install 
-./gradlew buildPravegaImage
 ./gradlew startStandalone
 
 cd flink-connectors
@@ -83,32 +82,37 @@ cd hadoop-connectors
 
 ### Run Flink Jobs
 
-- The Flink job can be executed with Nautilus, another Flink cluster, or in standalone mode.  
+- The Flink jobs can be executed with Nautilus, another Flink cluster, or in standalone mode.  
   In standalone mode, a mini Flink cluster will execute within the application process.
   When run in the IntelliJ IDE, standalone mode will be used by default.
+  
+- Flink jobs are in the flinkprocessor directory.
+
+- To view the raw data streaming on the console, run the job by using the following parameters:
+```
+--jobClass io.pravega.example.iiotdemo.flinkprocessor.StreamToConsoleJob
+--controller tcp://$PRAVEGA_HOST_ADDRESS:9090 
+--input-stream iot/data 
+```
 
 - Run the Raw Data job by using the following parameters:
 ```
---runMode rawdata-to-elasticsearch 
+--jobClass io.pravega.example.iiotdemo.flinkprocessor.StreamRawDataToElasticsearchJob
 --controller tcp://$PRAVEGA_HOST_ADDRESS:9090 
---input.stream iot/data 
+--input-stream iot/data 
 --elastic-sink true 
 --elastic-host $ELASTIC_HOST 
---elastic-index taxidemo-rawdata 
---elastic-type event 
 --elastic-delete-index true
 ```
 
 - Run the Extract Statistics job with the following parameters:
 ```
---runMode extract-statistics
+--jobClass io.pravega.example.iiotdemo.flinkprocessor.StreamStatisticsToElasticsearchJob
 --controller tcp://$PRAVEGA_HOST_ADDRESS:9090 
---input.stream iot/data 
+--input-stream iot/data 
 --elastic-sink true 
 --elastic-host $ELASTIC_HOST 
---elastic-index taxidemo-stats 
---elastic-type stats 
---elastic-delete-index false
+--elastic-delete-index true
 ```
 
 ## Building the Demo

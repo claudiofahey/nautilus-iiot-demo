@@ -46,7 +46,7 @@ public class ElasticsearchSetup implements Serializable {
         client.addTransportAddress(new InetSocketTransportAddress(InetAddress.getByName(host), port));
 
         if (isDeleteIndex) {
-            LOG.info("Deleting old Elasticsearch index");
+            LOG.info("Deleting old Elasticsearch index {}", index);
             try {
                 client.admin().indices().delete(Requests.deleteIndexRequest(index)).actionGet();
             } catch (IndexNotFoundException e) {
@@ -54,7 +54,7 @@ public class ElasticsearchSetup implements Serializable {
             }
         }
 
-        LOG.info("Creating Elasticsearch Index");
+        LOG.info("Creating Elasticsearch index {}", index);
         String fileName = String.format("%s-elastic-index.json", index);
         String indexBody = getTemplate(fileName, Collections.singletonMap("type", type));
         try {

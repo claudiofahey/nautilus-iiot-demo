@@ -1,96 +1,110 @@
 package io.pravega.example.iiotdemo.flinkprocessor;
 
-import io.pravega.connectors.flink.util.FlinkPravegaParams;
-import io.pravega.connectors.flink.util.StreamId;
+import io.pravega.client.stream.Stream;
+import io.pravega.connectors.flink.PravegaConfig;
+import org.apache.flink.api.java.utils.ParameterTool;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 
 public class AppConfiguration {
+    private static Logger log = LoggerFactory.getLogger(AppConfiguration.class);
 
-    private final PravegaArgs pravegaArgs = new PravegaArgs();
-    private final ElasticSearch elasticSearch = new ElasticSearch();
-    private FlinkPravegaParams flinkPravegaParams;
-    private String runMode;
-    private int parallelism;
-    private long checkpointInterval;
-    private boolean disableCheckpoint;
-    private boolean disableOperatorChaining;
-    private boolean enableRebalance;
+    private final PravegaConfig pravegaConfig;
+    private final StreamConfig inputStreamConfig;
+    private final StreamConfig outputStreamConfig;
+    private final ElasticSearch elasticSearch;
+    private final String jobClass;
+    private final int parallelism;
+    private final long checkpointInterval;
+    private final boolean disableCheckpoint;
+    private final boolean disableOperatorChaining;
+    private final boolean enableRebalance;
 
-    public static final String RUN_MODE_STREAM_RAW_DATA = "stream-raw-data";
-    public static final String RUN_MODE_STREAM_STATISTICS = "stream-statistics";
-    public static final String RUN_MODE_STREAM_TO_CONSOLE = "stream-to-console";
-    public static final String RUN_MODE_BATCH_STATISTICS = "batch-statistics";
+    public AppConfiguration(String[] args) {
+        ParameterTool params = ParameterTool.fromArgs(args);
+        log.info("Parameter Tool: {}", params.toMap());
 
-    public PravegaArgs getPravegaArgs() {
-        return pravegaArgs;
+        pravegaConfig = PravegaConfig.fromParams(params).withDefaultScope("iot");
+        inputStreamConfig = new StreamConfig(pravegaConfig,"input-", params);
+        outputStreamConfig = new StreamConfig(pravegaConfig,"output-", params);
+
+        jobClass = params.get("jobClass");
+        parallelism =params.getInt("parallelism", 1);
+        checkpointInterval = params.getLong("checkpointInterval", 10000);     // milliseconds
+        disableCheckpoint = params.getBoolean("disableCheckpoint", false);
+        disableOperatorChaining = params.getBoolean("disableOperatorChaining", false);
+        enableRebalance = params.getBoolean("rebalance", false);
+
+        elasticSearch = new ElasticSearch();
+        // elastic-sink: Whether to sink the results to Elastic Search or not.
+        elasticSearch.setSinkResults(params.getBoolean("elastic-sink", false));
+        elasticSearch.setDeleteIndex(params.getBoolean("elastic-delete-index", false));
+        // elastic-host: Host of the Elastic instance to sink to.
+        elasticSearch.setHost(params.get("elastic-host", "master.elastic.l4lb.thisdcos.directory"));
+        // elastic-port: Port of the Elastic instance to sink to.
+        elasticSearch.setPort(params.getInt("elastic-port", 9300));
+        // elastic-cluster: The name of the Elastic cluster to sink to.
+        elasticSearch.setCluster(params.get("elastic-cluster", "elastic"));
+        // elastic-index: The name of the Elastic index to sink to.
+        elasticSearch.setIndex(params.get("elastic-index", ""));
+        // elastic-type: The name of the type to sink.
+        elasticSearch.setType(params.get("elastic-type", ""));
+    }
+
+    public PravegaConfig getPravegaConfig() {
+        return pravegaConfig;
+    }
+
+    public StreamConfig getInputStreamConfig() {
+        return inputStreamConfig;
+    }
+
+    public StreamConfig getOutputStreamConfig() {
+        return outputStreamConfig;
     }
 
     public ElasticSearch getElasticSearch() {
         return elasticSearch;
     }
 
-    public FlinkPravegaParams getFlinkPravegaParams() {
-        return flinkPravegaParams;
-    }
-
-    public void setFlinkPravegaParams(FlinkPravegaParams flinkPravegaParams) {
-        this.flinkPravegaParams = flinkPravegaParams;
-    }
-
-    public String getRunMode() {
-        return runMode;
-    }
-
-    public void setRunMode(String runMode) {
-        this.runMode = runMode;
+    public String getJobClass() {
+        return jobClass;
     }
 
     public int getParallelism() {
         return parallelism;
     }
 
-    public void setParallelism(int parallelism) {
-        this.parallelism = parallelism;
-    }
-
     public long getCheckpointInterval() {
         return checkpointInterval;
-    }
-
-    public void setCheckpointInterval(long checkpointInterval) {
-        this.checkpointInterval = checkpointInterval;
     }
 
     public boolean isDisableCheckpoint() {
         return disableCheckpoint;
     }
 
-    public void setDisableCheckpoint(boolean disableCheckpoint) {
-        this.disableCheckpoint = disableCheckpoint;
-    }
-
     public boolean isDisableOperatorChaining() {
         return disableOperatorChaining;
-    }
-
-    public void setDisableOperatorChaining(boolean disableOperatorChaining) {
-        this.disableOperatorChaining = disableOperatorChaining;
     }
 
     public boolean isEnableRebalance() {
         return enableRebalance;
     }
 
-    public void setEnableRebalance(boolean enableRebalance) {
-        this.enableRebalance = enableRebalance;
-    }
-
-    public static class PravegaArgs {
-        protected StreamId inputStream;
+    public static class StreamConfig {
+        protected Stream stream;
         protected int targetRate;
         protected int scaleFactor;
         protected int minNumSegments;
+
+        public StreamConfig(PravegaConfig pravegaConfig, String argPrefix, ParameterTool params) {
+            stream = pravegaConfig.resolve(params.get(argPrefix + "stream", "default"));
+            targetRate = params.getInt(argPrefix + "targetRate", 100000);  // Data rate in KB/sec
+            scaleFactor = params.getInt(argPrefix + "scaleFactor", 2);
+            minNumSegments = params.getInt(argPrefix + "minNumSegments", 12);
+        }
     }
 
     public static class ElasticSearch implements Serializable {
