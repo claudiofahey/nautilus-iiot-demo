@@ -29,6 +29,9 @@ public class StreamStatisticsToElasticsearchJob extends AbstractJob {
             StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
 
             createStream(appConfiguration.getInputStreamConfig());
+
+            // TODO: Use table API.
+
             FlinkPravegaReader<RawData> flinkPravegaReader = FlinkPravegaReader.<RawData>builder()
                     .withPravegaConfig(appConfiguration.getPravegaConfig())
                     .forStream(appConfiguration.getInputStreamConfig().stream)
