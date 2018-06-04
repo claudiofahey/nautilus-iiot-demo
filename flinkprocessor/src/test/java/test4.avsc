@@ -1,0 +1,46 @@
+{
+  "type": "record",
+  "name": "TopRecord",
+  "namespace": "io.pravega.example.iiotdemo.flinkprocessor",
+  "doc": "Generate classes with: java -jar ~/nautilus/avro/avro-tools-1.8.2.jar compile schema test3.avsc .",
+  "fields": [
+    {
+      "name": "TempData",
+      "default": null,
+      "type": ["null", {
+                  "type": "record",
+                  "name": "TempData",
+                  "fields": [
+                    {"name": "timestamp", "type" : {"type": "long", "logicalType": "timestamp-millis"}},
+                    {"name" : "device_id", "type" : "string"},
+                    {"name" : "temp_celsius", "type" : ["null", "double"]}
+                  ]
+                }]
+    }, {
+      "name": "VibrationData",
+      "default": null,
+      "type": ["null", {
+                  "type": "record",
+                  "name": "VibrationData",
+                  "fields": [
+                    {"name": "timestamp", "type" : {"type": "long", "logicalType": "timestamp-millis"}},
+                    {"name" : "device_id", "type" : "string"},
+                    {"name" : "vibration1", "type" : ["null", "double"]},
+                    {"name" : "vibration2", "type" : ["null", "double"]}
+                  ]
+                }]
+    }, {
+      "name": "PressureData",
+      "default": null,
+      "type": ["null", {
+                  "type": "record",
+                  "name": "PressureData",
+                  "fields": [
+                    {"name": "timestamp", "type" : {"type": "long", "logicalType": "timestamp-millis"}},
+                    {"name" : "device_id", "type" : "string"},
+                    {"name" : "pressure", "type" : ["null", "double"]}
+                  ]
+                }]
+    }
+  ]
+}

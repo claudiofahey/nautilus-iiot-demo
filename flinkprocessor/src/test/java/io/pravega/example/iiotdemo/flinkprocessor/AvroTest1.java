@@ -55,6 +55,12 @@ public class AvroTest1 {
                 .build();
         log.info("topRecord3={}", topRecord3);
 
+        // Create pressure data record.
+        PressureData pressureData1 = new PressureData(DateTime.now(), "1234", 1000.0);
+        log.info("pressureData1={}", pressureData1);
+        TopRecord topRecord4 = TopRecord.newBuilder().setPressureData(pressureData1).build();
+        log.info("topRecord4={}", topRecord4);
+
         // Serialize records to file.
         String fileName = "/tmp/test1.avro";
         DatumWriter<TopRecord> datumWriter = new SpecificDatumWriter<TopRecord>(TopRecord.class);
@@ -63,6 +69,7 @@ public class AvroTest1 {
         dataFileWriter.append(topRecord1);
         dataFileWriter.append(topRecord2);
         dataFileWriter.append(topRecord3);
+        dataFileWriter.append(topRecord4);
         dataFileWriter.close();
 
         // Deserialize records from file and handle them.
@@ -85,6 +92,37 @@ public class AvroTest1 {
                 VibrationData vibrationData = topRecord.getVibrationData();
                 // Handle VibrationData.
                 log.info("vibrationData={}", vibrationData);
+            }
+        }
+    }
+
+    @Test
+    public void Test3() throws Exception {
+        String fileName = "/tmp/test1.avro";
+        DatumReader<TopRecord> datumReader = new SpecificDatumReader<TopRecord>(TopRecord.class);
+        DataFileReader<TopRecord> dataFileReader = new DataFileReader<TopRecord>(new File(fileName), datumReader);
+        TopRecord topRecord = null;
+        while (dataFileReader.hasNext()) {
+            topRecord = dataFileReader.next(topRecord);
+            log.info("topRecord={}", topRecord);
+            if (topRecord.getTempData() != null && topRecord.getVibrationData() != null) {
+                log.warn("Skipping invalid record that has both TempData and VibrationData: {}", topRecord);
+                continue;
+            }
+            if (topRecord.getTempData() != null) {
+                TempData tempData = topRecord.getTempData();
+                // Handle TempData.
+                log.info("tempData={}", tempData);
+            }
+            if (topRecord.getVibrationData() != null) {
+                VibrationData vibrationData = topRecord.getVibrationData();
+                // Handle VibrationData.
+                log.info("vibrationData={}", vibrationData);
+            }
+            if (topRecord.getPressureData() != null) {
+                PressureData pressureData = topRecord.getPressureData();
+                // Handle PressureData.
+                log.info("pressureData={}", pressureData);
             }
         }
     }

@@ -11,11 +11,11 @@ import org.apache.avro.message.BinaryMessageDecoder;
 import org.apache.avro.message.SchemaStore;
 
 @SuppressWarnings("all")
-/** java -jar ~/nautilus/avro/avro-tools-1.8.2.jar compile schema test3.avsc . */
+/** Generate classes with: java -jar ~/nautilus/avro/avro-tools-1.8.2.jar compile schema test3.avsc . */
 @org.apache.avro.specific.AvroGenerated
 public class TopRecord extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = -1542445972714078708L;
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"TopRecord\",\"namespace\":\"io.pravega.example.iiotdemo.flinkprocessor\",\"doc\":\"java -jar ~/nautilus/avro/avro-tools-1.8.2.jar compile schema test3.avsc .\",\"fields\":[{\"name\":\"TempData\",\"type\":[\"null\",{\"type\":\"record\",\"name\":\"TempData\",\"fields\":[{\"name\":\"timestamp\",\"type\":{\"type\":\"long\",\"logicalType\":\"timestamp-millis\"}},{\"name\":\"device_id\",\"type\":\"string\"},{\"name\":\"temp_celsius\",\"type\":[\"null\",\"double\"]}]}],\"default\":null},{\"name\":\"VibrationData\",\"type\":[\"null\",{\"type\":\"record\",\"name\":\"VibrationData\",\"fields\":[{\"name\":\"timestamp\",\"type\":{\"type\":\"long\",\"logicalType\":\"timestamp-millis\"}},{\"name\":\"device_id\",\"type\":\"string\"},{\"name\":\"vibration1\",\"type\":[\"null\",\"double\"]},{\"name\":\"vibration2\",\"type\":[\"null\",\"double\"]}]}],\"default\":null}]}");
+  private static final long serialVersionUID = -8278571378333489884L;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"TopRecord\",\"namespace\":\"io.pravega.example.iiotdemo.flinkprocessor\",\"doc\":\"Generate classes with: java -jar ~/nautilus/avro/avro-tools-1.8.2.jar compile schema test3.avsc .\",\"fields\":[{\"name\":\"TempData\",\"type\":[\"null\",{\"type\":\"record\",\"name\":\"TempData\",\"fields\":[{\"name\":\"timestamp\",\"type\":{\"type\":\"long\",\"logicalType\":\"timestamp-millis\"}},{\"name\":\"device_id\",\"type\":\"string\"},{\"name\":\"temp_celsius\",\"type\":[\"null\",\"double\"]}]}],\"default\":null},{\"name\":\"VibrationData\",\"type\":[\"null\",{\"type\":\"record\",\"name\":\"VibrationData\",\"fields\":[{\"name\":\"timestamp\",\"type\":{\"type\":\"long\",\"logicalType\":\"timestamp-millis\"}},{\"name\":\"device_id\",\"type\":\"string\"},{\"name\":\"vibration1\",\"type\":[\"null\",\"double\"]},{\"name\":\"vibration2\",\"type\":[\"null\",\"double\"]}]}],\"default\":null},{\"name\":\"PressureData\",\"type\":[\"null\",{\"type\":\"record\",\"name\":\"PressureData\",\"fields\":[{\"name\":\"timestamp\",\"type\":{\"type\":\"long\",\"logicalType\":\"timestamp-millis\"}},{\"name\":\"device_id\",\"type\":\"string\"},{\"name\":\"pressure\",\"type\":[\"null\",\"double\"]}]}],\"default\":null}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
   private static SpecificData MODEL$ = new SpecificData();
@@ -54,6 +54,7 @@ public class TopRecord extends org.apache.avro.specific.SpecificRecordBase imple
 
   @Deprecated public io.pravega.example.iiotdemo.flinkprocessor.TempData TempData;
   @Deprecated public io.pravega.example.iiotdemo.flinkprocessor.VibrationData VibrationData;
+  @Deprecated public io.pravega.example.iiotdemo.flinkprocessor.PressureData PressureData;
 
   /**
    * Default constructor.  Note that this does not initialize fields
@@ -66,10 +67,12 @@ public class TopRecord extends org.apache.avro.specific.SpecificRecordBase imple
    * All-args constructor.
    * @param TempData The new value for TempData
    * @param VibrationData The new value for VibrationData
+   * @param PressureData The new value for PressureData
    */
-  public TopRecord(io.pravega.example.iiotdemo.flinkprocessor.TempData TempData, io.pravega.example.iiotdemo.flinkprocessor.VibrationData VibrationData) {
+  public TopRecord(io.pravega.example.iiotdemo.flinkprocessor.TempData TempData, io.pravega.example.iiotdemo.flinkprocessor.VibrationData VibrationData, io.pravega.example.iiotdemo.flinkprocessor.PressureData PressureData) {
     this.TempData = TempData;
     this.VibrationData = VibrationData;
+    this.PressureData = PressureData;
   }
 
   public org.apache.avro.Schema getSchema() { return SCHEMA$; }
@@ -78,6 +81,7 @@ public class TopRecord extends org.apache.avro.specific.SpecificRecordBase imple
     switch (field$) {
     case 0: return TempData;
     case 1: return VibrationData;
+    case 2: return PressureData;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -88,6 +92,7 @@ public class TopRecord extends org.apache.avro.specific.SpecificRecordBase imple
     switch (field$) {
     case 0: TempData = (io.pravega.example.iiotdemo.flinkprocessor.TempData)value$; break;
     case 1: VibrationData = (io.pravega.example.iiotdemo.flinkprocessor.VibrationData)value$; break;
+    case 2: PressureData = (io.pravega.example.iiotdemo.flinkprocessor.PressureData)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
   }
@@ -122,6 +127,22 @@ public class TopRecord extends org.apache.avro.specific.SpecificRecordBase imple
    */
   public void setVibrationData(io.pravega.example.iiotdemo.flinkprocessor.VibrationData value) {
     this.VibrationData = value;
+  }
+
+  /**
+   * Gets the value of the 'PressureData' field.
+   * @return The value of the 'PressureData' field.
+   */
+  public io.pravega.example.iiotdemo.flinkprocessor.PressureData getPressureData() {
+    return PressureData;
+  }
+
+  /**
+   * Sets the value of the 'PressureData' field.
+   * @param value the value to set.
+   */
+  public void setPressureData(io.pravega.example.iiotdemo.flinkprocessor.PressureData value) {
+    this.PressureData = value;
   }
 
   /**
@@ -160,6 +181,8 @@ public class TopRecord extends org.apache.avro.specific.SpecificRecordBase imple
     private io.pravega.example.iiotdemo.flinkprocessor.TempData.Builder TempDataBuilder;
     private io.pravega.example.iiotdemo.flinkprocessor.VibrationData VibrationData;
     private io.pravega.example.iiotdemo.flinkprocessor.VibrationData.Builder VibrationDataBuilder;
+    private io.pravega.example.iiotdemo.flinkprocessor.PressureData PressureData;
+    private io.pravega.example.iiotdemo.flinkprocessor.PressureData.Builder PressureDataBuilder;
 
     /** Creates a new Builder */
     private Builder() {
@@ -186,6 +209,13 @@ public class TopRecord extends org.apache.avro.specific.SpecificRecordBase imple
       if (other.hasVibrationDataBuilder()) {
         this.VibrationDataBuilder = io.pravega.example.iiotdemo.flinkprocessor.VibrationData.newBuilder(other.getVibrationDataBuilder());
       }
+      if (isValidValue(fields()[2], other.PressureData)) {
+        this.PressureData = data().deepCopy(fields()[2].schema(), other.PressureData);
+        fieldSetFlags()[2] = true;
+      }
+      if (other.hasPressureDataBuilder()) {
+        this.PressureDataBuilder = io.pravega.example.iiotdemo.flinkprocessor.PressureData.newBuilder(other.getPressureDataBuilder());
+      }
     }
 
     /**
@@ -204,6 +234,11 @@ public class TopRecord extends org.apache.avro.specific.SpecificRecordBase imple
         fieldSetFlags()[1] = true;
       }
       this.VibrationDataBuilder = null;
+      if (isValidValue(fields()[2], other.PressureData)) {
+        this.PressureData = data().deepCopy(fields()[2].schema(), other.PressureData);
+        fieldSetFlags()[2] = true;
+      }
+      this.PressureDataBuilder = null;
     }
 
     /**
@@ -354,6 +389,80 @@ public class TopRecord extends org.apache.avro.specific.SpecificRecordBase imple
       return this;
     }
 
+    /**
+      * Gets the value of the 'PressureData' field.
+      * @return The value.
+      */
+    public io.pravega.example.iiotdemo.flinkprocessor.PressureData getPressureData() {
+      return PressureData;
+    }
+
+    /**
+      * Sets the value of the 'PressureData' field.
+      * @param value The value of 'PressureData'.
+      * @return This builder.
+      */
+    public io.pravega.example.iiotdemo.flinkprocessor.TopRecord.Builder setPressureData(io.pravega.example.iiotdemo.flinkprocessor.PressureData value) {
+      validate(fields()[2], value);
+      this.PressureDataBuilder = null;
+      this.PressureData = value;
+      fieldSetFlags()[2] = true;
+      return this;
+    }
+
+    /**
+      * Checks whether the 'PressureData' field has been set.
+      * @return True if the 'PressureData' field has been set, false otherwise.
+      */
+    public boolean hasPressureData() {
+      return fieldSetFlags()[2];
+    }
+
+    /**
+     * Gets the Builder instance for the 'PressureData' field and creates one if it doesn't exist yet.
+     * @return This builder.
+     */
+    public io.pravega.example.iiotdemo.flinkprocessor.PressureData.Builder getPressureDataBuilder() {
+      if (PressureDataBuilder == null) {
+        if (hasPressureData()) {
+          setPressureDataBuilder(io.pravega.example.iiotdemo.flinkprocessor.PressureData.newBuilder(PressureData));
+        } else {
+          setPressureDataBuilder(io.pravega.example.iiotdemo.flinkprocessor.PressureData.newBuilder());
+        }
+      }
+      return PressureDataBuilder;
+    }
+
+    /**
+     * Sets the Builder instance for the 'PressureData' field
+     * @param value The builder instance that must be set.
+     * @return This builder.
+     */
+    public io.pravega.example.iiotdemo.flinkprocessor.TopRecord.Builder setPressureDataBuilder(io.pravega.example.iiotdemo.flinkprocessor.PressureData.Builder value) {
+      clearPressureData();
+      PressureDataBuilder = value;
+      return this;
+    }
+
+    /**
+     * Checks whether the 'PressureData' field has an active Builder instance
+     * @return True if the 'PressureData' field has an active Builder instance
+     */
+    public boolean hasPressureDataBuilder() {
+      return PressureDataBuilder != null;
+    }
+
+    /**
+      * Clears the value of the 'PressureData' field.
+      * @return This builder.
+      */
+    public io.pravega.example.iiotdemo.flinkprocessor.TopRecord.Builder clearPressureData() {
+      PressureData = null;
+      PressureDataBuilder = null;
+      fieldSetFlags()[2] = false;
+      return this;
+    }
+
     @Override
     @SuppressWarnings("unchecked")
     public TopRecord build() {
@@ -368,6 +477,11 @@ public class TopRecord extends org.apache.avro.specific.SpecificRecordBase imple
           record.VibrationData = this.VibrationDataBuilder.build();
         } else {
           record.VibrationData = fieldSetFlags()[1] ? this.VibrationData : (io.pravega.example.iiotdemo.flinkprocessor.VibrationData) defaultValue(fields()[1]);
+        }
+        if (PressureDataBuilder != null) {
+          record.PressureData = this.PressureDataBuilder.build();
+        } else {
+          record.PressureData = fieldSetFlags()[2] ? this.PressureData : (io.pravega.example.iiotdemo.flinkprocessor.PressureData) defaultValue(fields()[2]);
         }
         return record;
       } catch (java.lang.Exception e) {

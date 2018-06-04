@@ -1,0 +1,23 @@
+{
+  "type" : "record",
+  "name" : "rawdata",
+  "fields" : [ {
+    "name" : "timestamp",
+    "type" : {"type": "long", "logicalType": "timestamp-millis"}
+  }, {
+    "name" : "event_type",
+    "type" : {"type": "enum", "name": "event_type", "symbols": ["temp", "vibration"]}
+  }, {
+    "name" : "device_id",
+    "type" : "string"
+  }, {
+    "name" : "temp_celsius",
+    "type" : ["null", "double"]
+  }, {
+    "name" : "vibration1",
+    "type" : ["null", "double"]
+  }, {
+    "name" : "vibration2",
+    "type" : ["null", "double"]
+  } ]
+}
