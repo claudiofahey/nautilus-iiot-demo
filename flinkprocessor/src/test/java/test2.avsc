@@ -1,0 +1,33 @@
+{
+  "type": "record",
+  "name": "TopRecord",
+  "namespace": "io.pravega.example.iiotdemo.flinkprocessor",
+  "fields": [
+    {
+      "name": "InnerRecord",
+      "type":
+        [
+            {
+              "type": "record",
+              "name": "TempData",
+              "fields": [
+                {"name": "timestamp", "type" : {"type": "long", "logicalType": "timestamp-millis"}},
+                {"name" : "device_id", "type" : "string"},
+                {"name" : "temp_celsius", "type" : ["null", "double"]}
+              ]
+            },
+            {
+              "type": "record",
+              "name": "VibrationData",
+              "fields": [
+                {"name": "timestamp", "type" : {"type": "long", "logicalType": "timestamp-millis"}},
+                {"name" : "device_id", "type" : "string"},
+                {"name" : "vibration1", "type" : ["null", "double"]},
+                {"name" : "vibration2", "type" : ["null", "double"]}
+              ]
+            }
+          ]
+    }
+  ]
+}
+

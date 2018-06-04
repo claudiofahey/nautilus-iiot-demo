@@ -80,8 +80,8 @@ public class CallWebServiceTest5 {
 //            .printToErr();
             .keyBy("device_id");
 
-        aggStream
-            .process(new MyProcessFunc());
+//        aggStream
+//            .process(new MyProcessFunc());
 //         = timestamped.keyBy("device_id");
 //        keyedStream.printToErr();
 //        AsyncDataStream.unorderedWait(ds, new AsyncFunc(), 10000, TimeUnit.MILLISECONDS, 100).printToErr();

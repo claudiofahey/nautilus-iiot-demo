@@ -41,6 +41,7 @@ dependencies {
     compile "org.apache.flink:flink-table_2.11:${flinkVersion}"
     compile "io.pravega:pravega-client:${pravegaVersion}"
     compile "org.asynchttpclient:async-http-client:2.4.7"
+    compile "org.apache.avro:avro:1.8.2"
 
     // Below commented out because we get a GRPC version conflict.
 //    compile "io.pravega:hadoop-connectors:${pravegaHadoopConnectorVersion}"
