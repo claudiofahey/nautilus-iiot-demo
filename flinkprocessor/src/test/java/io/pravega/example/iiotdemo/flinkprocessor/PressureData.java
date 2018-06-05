@@ -13,8 +13,8 @@ import org.apache.avro.message.SchemaStore;
 @SuppressWarnings("all")
 @org.apache.avro.specific.AvroGenerated
 public class PressureData extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = 4496030406472267765L;
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"PressureData\",\"namespace\":\"io.pravega.example.iiotdemo.flinkprocessor\",\"fields\":[{\"name\":\"timestamp\",\"type\":{\"type\":\"long\",\"logicalType\":\"timestamp-millis\"}},{\"name\":\"device_id\",\"type\":\"string\"},{\"name\":\"pressure\",\"type\":[\"null\",\"double\"]}]}");
+  private static final long serialVersionUID = -8341476966954472243L;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"PressureData\",\"namespace\":\"io.pravega.example.iiotdemo.flinkprocessor\",\"fields\":[{\"name\":\"pressure\",\"type\":\"double\"}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
   private static SpecificData MODEL$ = new SpecificData();
@@ -51,9 +51,7 @@ public class PressureData extends org.apache.avro.specific.SpecificRecordBase im
     return DECODER.decode(b);
   }
 
-  @Deprecated public org.joda.time.DateTime timestamp;
-  @Deprecated public java.lang.CharSequence device_id;
-  @Deprecated public java.lang.Double pressure;
+  @Deprecated public double pressure;
 
   /**
    * Default constructor.  Note that this does not initialize fields
@@ -64,13 +62,9 @@ public class PressureData extends org.apache.avro.specific.SpecificRecordBase im
 
   /**
    * All-args constructor.
-   * @param timestamp The new value for timestamp
-   * @param device_id The new value for device_id
    * @param pressure The new value for pressure
    */
-  public PressureData(org.joda.time.DateTime timestamp, java.lang.CharSequence device_id, java.lang.Double pressure) {
-    this.timestamp = timestamp;
-    this.device_id = device_id;
+  public PressureData(java.lang.Double pressure) {
     this.pressure = pressure;
   }
 
@@ -78,72 +72,18 @@ public class PressureData extends org.apache.avro.specific.SpecificRecordBase im
   // Used by DatumWriter.  Applications should not call.
   public java.lang.Object get(int field$) {
     switch (field$) {
-    case 0: return timestamp;
-    case 1: return device_id;
-    case 2: return pressure;
+    case 0: return pressure;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
-  }
-
-  protected static final org.apache.avro.data.TimeConversions.DateConversion DATE_CONVERSION = new org.apache.avro.data.TimeConversions.DateConversion();
-  protected static final org.apache.avro.data.TimeConversions.TimeConversion TIME_CONVERSION = new org.apache.avro.data.TimeConversions.TimeConversion();
-  protected static final org.apache.avro.data.TimeConversions.TimestampConversion TIMESTAMP_CONVERSION = new org.apache.avro.data.TimeConversions.TimestampConversion();
-  protected static final org.apache.avro.Conversions.DecimalConversion DECIMAL_CONVERSION = new org.apache.avro.Conversions.DecimalConversion();
-
-  private static final org.apache.avro.Conversion<?>[] conversions =
-      new org.apache.avro.Conversion<?>[] {
-      TIMESTAMP_CONVERSION,
-      null,
-      null,
-      null
-  };
-
-  @Override
-  public org.apache.avro.Conversion<?> getConversion(int field) {
-    return conversions[field];
   }
 
   // Used by DatumReader.  Applications should not call.
   @SuppressWarnings(value="unchecked")
   public void put(int field$, java.lang.Object value$) {
     switch (field$) {
-    case 0: timestamp = (org.joda.time.DateTime)value$; break;
-    case 1: device_id = (java.lang.CharSequence)value$; break;
-    case 2: pressure = (java.lang.Double)value$; break;
+    case 0: pressure = (java.lang.Double)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
-  }
-
-  /**
-   * Gets the value of the 'timestamp' field.
-   * @return The value of the 'timestamp' field.
-   */
-  public org.joda.time.DateTime getTimestamp() {
-    return timestamp;
-  }
-
-  /**
-   * Sets the value of the 'timestamp' field.
-   * @param value the value to set.
-   */
-  public void setTimestamp(org.joda.time.DateTime value) {
-    this.timestamp = value;
-  }
-
-  /**
-   * Gets the value of the 'device_id' field.
-   * @return The value of the 'device_id' field.
-   */
-  public java.lang.CharSequence getDeviceId() {
-    return device_id;
-  }
-
-  /**
-   * Sets the value of the 'device_id' field.
-   * @param value the value to set.
-   */
-  public void setDeviceId(java.lang.CharSequence value) {
-    this.device_id = value;
   }
 
   /**
@@ -194,9 +134,7 @@ public class PressureData extends org.apache.avro.specific.SpecificRecordBase im
   public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<PressureData>
     implements org.apache.avro.data.RecordBuilder<PressureData> {
 
-    private org.joda.time.DateTime timestamp;
-    private java.lang.CharSequence device_id;
-    private java.lang.Double pressure;
+    private double pressure;
 
     /** Creates a new Builder */
     private Builder() {
@@ -209,17 +147,9 @@ public class PressureData extends org.apache.avro.specific.SpecificRecordBase im
      */
     private Builder(io.pravega.example.iiotdemo.flinkprocessor.PressureData.Builder other) {
       super(other);
-      if (isValidValue(fields()[0], other.timestamp)) {
-        this.timestamp = data().deepCopy(fields()[0].schema(), other.timestamp);
+      if (isValidValue(fields()[0], other.pressure)) {
+        this.pressure = data().deepCopy(fields()[0].schema(), other.pressure);
         fieldSetFlags()[0] = true;
-      }
-      if (isValidValue(fields()[1], other.device_id)) {
-        this.device_id = data().deepCopy(fields()[1].schema(), other.device_id);
-        fieldSetFlags()[1] = true;
-      }
-      if (isValidValue(fields()[2], other.pressure)) {
-        this.pressure = data().deepCopy(fields()[2].schema(), other.pressure);
-        fieldSetFlags()[2] = true;
       }
     }
 
@@ -229,95 +159,10 @@ public class PressureData extends org.apache.avro.specific.SpecificRecordBase im
      */
     private Builder(io.pravega.example.iiotdemo.flinkprocessor.PressureData other) {
             super(SCHEMA$);
-      if (isValidValue(fields()[0], other.timestamp)) {
-        this.timestamp = data().deepCopy(fields()[0].schema(), other.timestamp);
+      if (isValidValue(fields()[0], other.pressure)) {
+        this.pressure = data().deepCopy(fields()[0].schema(), other.pressure);
         fieldSetFlags()[0] = true;
       }
-      if (isValidValue(fields()[1], other.device_id)) {
-        this.device_id = data().deepCopy(fields()[1].schema(), other.device_id);
-        fieldSetFlags()[1] = true;
-      }
-      if (isValidValue(fields()[2], other.pressure)) {
-        this.pressure = data().deepCopy(fields()[2].schema(), other.pressure);
-        fieldSetFlags()[2] = true;
-      }
-    }
-
-    /**
-      * Gets the value of the 'timestamp' field.
-      * @return The value.
-      */
-    public org.joda.time.DateTime getTimestamp() {
-      return timestamp;
-    }
-
-    /**
-      * Sets the value of the 'timestamp' field.
-      * @param value The value of 'timestamp'.
-      * @return This builder.
-      */
-    public io.pravega.example.iiotdemo.flinkprocessor.PressureData.Builder setTimestamp(org.joda.time.DateTime value) {
-      validate(fields()[0], value);
-      this.timestamp = value;
-      fieldSetFlags()[0] = true;
-      return this;
-    }
-
-    /**
-      * Checks whether the 'timestamp' field has been set.
-      * @return True if the 'timestamp' field has been set, false otherwise.
-      */
-    public boolean hasTimestamp() {
-      return fieldSetFlags()[0];
-    }
-
-
-    /**
-      * Clears the value of the 'timestamp' field.
-      * @return This builder.
-      */
-    public io.pravega.example.iiotdemo.flinkprocessor.PressureData.Builder clearTimestamp() {
-      fieldSetFlags()[0] = false;
-      return this;
-    }
-
-    /**
-      * Gets the value of the 'device_id' field.
-      * @return The value.
-      */
-    public java.lang.CharSequence getDeviceId() {
-      return device_id;
-    }
-
-    /**
-      * Sets the value of the 'device_id' field.
-      * @param value The value of 'device_id'.
-      * @return This builder.
-      */
-    public io.pravega.example.iiotdemo.flinkprocessor.PressureData.Builder setDeviceId(java.lang.CharSequence value) {
-      validate(fields()[1], value);
-      this.device_id = value;
-      fieldSetFlags()[1] = true;
-      return this;
-    }
-
-    /**
-      * Checks whether the 'device_id' field has been set.
-      * @return True if the 'device_id' field has been set, false otherwise.
-      */
-    public boolean hasDeviceId() {
-      return fieldSetFlags()[1];
-    }
-
-
-    /**
-      * Clears the value of the 'device_id' field.
-      * @return This builder.
-      */
-    public io.pravega.example.iiotdemo.flinkprocessor.PressureData.Builder clearDeviceId() {
-      device_id = null;
-      fieldSetFlags()[1] = false;
-      return this;
     }
 
     /**
@@ -333,10 +178,10 @@ public class PressureData extends org.apache.avro.specific.SpecificRecordBase im
       * @param value The value of 'pressure'.
       * @return This builder.
       */
-    public io.pravega.example.iiotdemo.flinkprocessor.PressureData.Builder setPressure(java.lang.Double value) {
-      validate(fields()[2], value);
+    public io.pravega.example.iiotdemo.flinkprocessor.PressureData.Builder setPressure(double value) {
+      validate(fields()[0], value);
       this.pressure = value;
-      fieldSetFlags()[2] = true;
+      fieldSetFlags()[0] = true;
       return this;
     }
 
@@ -345,7 +190,7 @@ public class PressureData extends org.apache.avro.specific.SpecificRecordBase im
       * @return True if the 'pressure' field has been set, false otherwise.
       */
     public boolean hasPressure() {
-      return fieldSetFlags()[2];
+      return fieldSetFlags()[0];
     }
 
 
@@ -354,8 +199,7 @@ public class PressureData extends org.apache.avro.specific.SpecificRecordBase im
       * @return This builder.
       */
     public io.pravega.example.iiotdemo.flinkprocessor.PressureData.Builder clearPressure() {
-      pressure = null;
-      fieldSetFlags()[2] = false;
+      fieldSetFlags()[0] = false;
       return this;
     }
 
@@ -364,9 +208,7 @@ public class PressureData extends org.apache.avro.specific.SpecificRecordBase im
     public PressureData build() {
       try {
         PressureData record = new PressureData();
-        record.timestamp = fieldSetFlags()[0] ? this.timestamp : (org.joda.time.DateTime) defaultValue(fields()[0], record.getConversion(0));
-        record.device_id = fieldSetFlags()[1] ? this.device_id : (java.lang.CharSequence) defaultValue(fields()[1], record.getConversion(1));
-        record.pressure = fieldSetFlags()[2] ? this.pressure : (java.lang.Double) defaultValue(fields()[2], record.getConversion(2));
+        record.pressure = fieldSetFlags()[0] ? this.pressure : (java.lang.Double) defaultValue(fields()[0]);
         return record;
       } catch (java.lang.Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

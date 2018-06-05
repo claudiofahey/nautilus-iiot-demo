@@ -18,7 +18,7 @@ public class AvroTest1 {
 
     @Test
     public void Test1() throws Exception {
-        TempData tempData = new TempData(DateTime.now(), "1234", 30.0);
+        TempData tempData = new TempData(30.0);
         log.info("tempData={}", tempData);
 
         DatumWriter<TempData> datumWriter = new SpecificDatumWriter<TempData>(TempData.class);
@@ -37,59 +37,73 @@ public class AvroTest1 {
     @Test
     public void Test2() throws Exception {
         // Create temperature data record.
-        TempData tempData1 = new TempData(DateTime.now(), "1234", 30.0);
+        TempData tempData1 = new TempData(30.0);
         log.info("tempData1={}", tempData1);
-        TopRecord topRecord1 = TopRecord.newBuilder().setTempData(tempData1).build();
-        log.info("topRecord1={}", topRecord1);
+        GenericData genericData1 = GenericData.newBuilder()
+                .setTimestamp(DateTime.now())
+                .setDeviceId("1234")
+                .setTempData(tempData1)
+                .build();
+        log.info("genericData1={}", genericData1);
 
         // Create vibration data record.
-        VibrationData vibrationData1 = new VibrationData(DateTime.now(), "1234", 1.0, 2.0);
+        VibrationData vibrationData1 = new VibrationData( 1.0, 2.0);
         log.info("vibrationData1={}", vibrationData1);
-        TopRecord topRecord2 = TopRecord.newBuilder().setVibrationData(vibrationData1).build();
-        log.info("topRecord2={}", topRecord2);
+        GenericData genericData2 = GenericData.newBuilder()
+                .setTimestamp(DateTime.now())
+                .setDeviceId("1234")
+                .setVibrationData(vibrationData1)
+                .build();
+        log.info("genericData2={}", genericData2);
 
         // Create invalid data record.
-        TopRecord topRecord3 = TopRecord.newBuilder()
+        GenericData genericData3 = GenericData.newBuilder()
+                .setTimestamp(DateTime.now())
+                .setDeviceId("1234")
                 .setTempData(tempData1)
                 .setVibrationData(vibrationData1)
                 .build();
-        log.info("topRecord3={}", topRecord3);
+        log.info("genericData3={}", genericData3);
 
         // Create pressure data record.
-        PressureData pressureData1 = new PressureData(DateTime.now(), "1234", 1000.0);
+        PressureData pressureData1 = new PressureData(1000.0);
         log.info("pressureData1={}", pressureData1);
-        TopRecord topRecord4 = TopRecord.newBuilder().setPressureData(pressureData1).build();
-        log.info("topRecord4={}", topRecord4);
+        GenericData genericData4 = GenericData.newBuilder()
+                .setTimestamp(DateTime.now())
+                .setDeviceId("1234")
+                .setPressureData(pressureData1)
+                .build();
+        log.info("genericData4={}", genericData4);
 
         // Serialize records to file.
         String fileName = "/tmp/test1.avro";
-        DatumWriter<TopRecord> datumWriter = new SpecificDatumWriter<TopRecord>(TopRecord.class);
-        DataFileWriter<TopRecord> dataFileWriter = new DataFileWriter<TopRecord>(datumWriter);
-        dataFileWriter.create(TopRecord.getClassSchema(), new File(fileName));
-        dataFileWriter.append(topRecord1);
-        dataFileWriter.append(topRecord2);
-        dataFileWriter.append(topRecord3);
-        dataFileWriter.append(topRecord4);
+        DatumWriter<GenericData> datumWriter = new SpecificDatumWriter<GenericData>(GenericData.class);
+        DataFileWriter<GenericData> dataFileWriter = new DataFileWriter<GenericData>(datumWriter);
+        dataFileWriter.create(GenericData.getClassSchema(), new File(fileName));
+        dataFileWriter.append(genericData1);
+        dataFileWriter.append(genericData2);
+        dataFileWriter.append(genericData3);
+        dataFileWriter.append(genericData4);
         dataFileWriter.close();
 
         // Deserialize records from file and handle them.
-        DatumReader<TopRecord> datumReader = new SpecificDatumReader<TopRecord>(TopRecord.class);
-        DataFileReader<TopRecord> dataFileReader = new DataFileReader<TopRecord>(new File(fileName), datumReader);
-        TopRecord topRecord = null;
+        DatumReader<GenericData> datumReader = new SpecificDatumReader<GenericData>(GenericData.class);
+        DataFileReader<GenericData> dataFileReader = new DataFileReader<GenericData>(new File(fileName), datumReader);
+        GenericData genericData = null;
         while (dataFileReader.hasNext()) {
-            topRecord = dataFileReader.next(topRecord);
-            log.info("topRecord={}", topRecord);
-            if (topRecord.getTempData() != null && topRecord.getVibrationData() != null) {
-                log.warn("Skipping invalid record that has both TempData and VibrationData: {}", topRecord);
+            genericData = dataFileReader.next(genericData);
+            log.info("genericData={}", genericData);
+            if (genericData.getTempData() != null && genericData.getVibrationData() != null) {
+                log.warn("Skipping invalid record that has both TempData and VibrationData: {}", genericData);
                 continue;
             }
-            if (topRecord.getTempData() != null) {
-                TempData tempData = topRecord.getTempData();
+            if (genericData.getTempData() != null) {
+                TempData tempData = genericData.getTempData();
                 // Handle TempData.
                 log.info("tempData={}", tempData);
             }
-            if (topRecord.getVibrationData() != null) {
-                VibrationData vibrationData = topRecord.getVibrationData();
+            if (genericData.getVibrationData() != null) {
+                VibrationData vibrationData = genericData.getVibrationData();
                 // Handle VibrationData.
                 log.info("vibrationData={}", vibrationData);
             }
@@ -99,28 +113,28 @@ public class AvroTest1 {
     @Test
     public void Test3() throws Exception {
         String fileName = "/tmp/test1.avro";
-        DatumReader<TopRecord> datumReader = new SpecificDatumReader<TopRecord>(TopRecord.class);
-        DataFileReader<TopRecord> dataFileReader = new DataFileReader<TopRecord>(new File(fileName), datumReader);
-        TopRecord topRecord = null;
+        DatumReader<GenericData> datumReader = new SpecificDatumReader<GenericData>(GenericData.class);
+        DataFileReader<GenericData> dataFileReader = new DataFileReader<GenericData>(new File(fileName), datumReader);
+        GenericData genericData = null;
         while (dataFileReader.hasNext()) {
-            topRecord = dataFileReader.next(topRecord);
-            log.info("topRecord={}", topRecord);
-            if (topRecord.getTempData() != null && topRecord.getVibrationData() != null) {
-                log.warn("Skipping invalid record that has both TempData and VibrationData: {}", topRecord);
+            genericData = dataFileReader.next(genericData);
+            log.info("genericData={}", genericData);
+            if (genericData.getTempData() != null && genericData.getVibrationData() != null) {
+                log.warn("Skipping invalid record that has both TempData and VibrationData: {}", genericData);
                 continue;
             }
-            if (topRecord.getTempData() != null) {
-                TempData tempData = topRecord.getTempData();
+            if (genericData.getTempData() != null) {
+                TempData tempData = genericData.getTempData();
                 // Handle TempData.
                 log.info("tempData={}", tempData);
             }
-            if (topRecord.getVibrationData() != null) {
-                VibrationData vibrationData = topRecord.getVibrationData();
+            if (genericData.getVibrationData() != null) {
+                VibrationData vibrationData = genericData.getVibrationData();
                 // Handle VibrationData.
                 log.info("vibrationData={}", vibrationData);
             }
-            if (topRecord.getPressureData() != null) {
-                PressureData pressureData = topRecord.getPressureData();
+            if (genericData.getPressureData() != null) {
+                PressureData pressureData = genericData.getPressureData();
                 // Handle PressureData.
                 log.info("pressureData={}", pressureData);
             }

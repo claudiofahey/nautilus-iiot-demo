@@ -1,0 +1,42 @@
+{
+  "type": "record",
+  "name": "GenericData",
+  "namespace": "io.pravega.example.iiotdemo.flinkprocessor",
+  "doc": "Generate classes with: java -jar ~/nautilus/avro/avro-tools-1.8.2.jar compile schema test5.avsc .",
+  "fields": [
+    {"name": "timestamp", "type": {"type": "long", "logicalType": "timestamp-millis"}, "doc": "Event time"},
+    {"name": "device_id", "type": "string", "doc": "This is used as the routing key for the stream so it must exist for all types."},
+    {
+      "name": "TempData",
+      "default": null,
+      "type": ["null", {
+          "type": "record",
+          "name": "TempData",
+          "fields": [
+            {"name": "temp_celsius", "type": "double"}
+          ]
+      }]
+    }, {
+      "name": "VibrationData",
+      "default": null,
+      "type": ["null", {
+          "type": "record",
+          "name": "VibrationData",
+          "fields": [
+            {"name": "vibration1", "type": "double"},
+            {"name": "vibration2", "type": ["null", "double"]}
+          ]
+      }]
+    }, {
+      "name": "PressureData",
+      "default": null,
+      "type": ["null", {
+          "type": "record",
+          "name": "PressureData",
+          "fields": [
+            {"name": "pressure", "type": "double"}
+          ]
+      }]
+    }
+  ]
+}

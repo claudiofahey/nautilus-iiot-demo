@@ -13,6 +13,7 @@ import requests
 from multiprocessing import Process
 import random
 from math import sin, pi
+import json
 
 def chunks(l, n):
     """Yield successive n-sized chunks from l.
@@ -27,10 +28,10 @@ def sine_wave_generator(temp_celsius_low, temp_celsius_high, temp_celsius_period
         temp_celsius = (temp_celsius_high - temp_celsius_low) * temp_celsius_normalized + temp_celsius_low
         data = {'timestamp': t, 'event_type': 'temp', 'device_id': device_id, 'temp_celsius': temp_celsius}
         yield data
-        vibration1 = 10.0 * (temp_celsius + 273.15)
-        vibration2 = 20.0 * (temp_celsius + 273.15) + 100.0
-        data = {'timestamp': t, 'event_type': 'vibration', 'device_id': device_id, 'vibration1': vibration1, 'vibration2': vibration2}
-        yield data
+        # vibration1 = 10.0 * (temp_celsius + 273.15)
+        # vibration2 = 20.0 * (temp_celsius + 273.15) + 100.0
+        # data = {'timestamp': t, 'event_type': 'vibration', 'device_id': device_id, 'vibration1': vibration1, 'vibration2': vibration2}
+        # yield data
         t += int(1000.0 * report_period_sec)
 
 def single_generator_process(options, device_id):
@@ -53,7 +54,18 @@ def single_generator_process(options, device_id):
             sleep_sec = t/1000.0 - time()
             if sleep_sec > 0.0:
                 sleep(sleep_sec)
-            print(device_id + ': ' + str(data))
+            if True:
+                if data['event_type'] == 'temp':
+                    data = {
+                        'timestamp': data['timestamp'],
+                        'device_id': data['device_id'],
+                        'PressureData': None,
+                        'TempData': {
+                            'temp_celsius': data['temp_celsius'],
+                        },
+                        'VibrationData': None,
+                    }
+            print(device_id + ': ' + json.dumps(data))
             response = requests.post(url, json=data)
             print(device_id + ': ' + str(response))
             response.raise_for_status()

@@ -13,8 +13,8 @@ import org.apache.avro.message.SchemaStore;
 @SuppressWarnings("all")
 @org.apache.avro.specific.AvroGenerated
 public class VibrationData extends org.apache.avro.specific.SpecificRecordBase implements org.apache.avro.specific.SpecificRecord {
-  private static final long serialVersionUID = -1145465315181401324L;
-  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"VibrationData\",\"namespace\":\"io.pravega.example.iiotdemo.flinkprocessor\",\"fields\":[{\"name\":\"timestamp\",\"type\":{\"type\":\"long\",\"logicalType\":\"timestamp-millis\"}},{\"name\":\"device_id\",\"type\":\"string\"},{\"name\":\"vibration1\",\"type\":[\"null\",\"double\"]},{\"name\":\"vibration2\",\"type\":[\"null\",\"double\"]}]}");
+  private static final long serialVersionUID = 573027381051693531L;
+  public static final org.apache.avro.Schema SCHEMA$ = new org.apache.avro.Schema.Parser().parse("{\"type\":\"record\",\"name\":\"VibrationData\",\"namespace\":\"io.pravega.example.iiotdemo.flinkprocessor\",\"fields\":[{\"name\":\"vibration1\",\"type\":\"double\"},{\"name\":\"vibration2\",\"type\":[\"null\",\"double\"]}]}");
   public static org.apache.avro.Schema getClassSchema() { return SCHEMA$; }
 
   private static SpecificData MODEL$ = new SpecificData();
@@ -51,9 +51,7 @@ public class VibrationData extends org.apache.avro.specific.SpecificRecordBase i
     return DECODER.decode(b);
   }
 
-  @Deprecated public org.joda.time.DateTime timestamp;
-  @Deprecated public java.lang.CharSequence device_id;
-  @Deprecated public java.lang.Double vibration1;
+  @Deprecated public double vibration1;
   @Deprecated public java.lang.Double vibration2;
 
   /**
@@ -65,14 +63,10 @@ public class VibrationData extends org.apache.avro.specific.SpecificRecordBase i
 
   /**
    * All-args constructor.
-   * @param timestamp The new value for timestamp
-   * @param device_id The new value for device_id
    * @param vibration1 The new value for vibration1
    * @param vibration2 The new value for vibration2
    */
-  public VibrationData(org.joda.time.DateTime timestamp, java.lang.CharSequence device_id, java.lang.Double vibration1, java.lang.Double vibration2) {
-    this.timestamp = timestamp;
-    this.device_id = device_id;
+  public VibrationData(java.lang.Double vibration1, java.lang.Double vibration2) {
     this.vibration1 = vibration1;
     this.vibration2 = vibration2;
   }
@@ -81,75 +75,20 @@ public class VibrationData extends org.apache.avro.specific.SpecificRecordBase i
   // Used by DatumWriter.  Applications should not call.
   public java.lang.Object get(int field$) {
     switch (field$) {
-    case 0: return timestamp;
-    case 1: return device_id;
-    case 2: return vibration1;
-    case 3: return vibration2;
+    case 0: return vibration1;
+    case 1: return vibration2;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
-  }
-
-  protected static final org.apache.avro.data.TimeConversions.DateConversion DATE_CONVERSION = new org.apache.avro.data.TimeConversions.DateConversion();
-  protected static final org.apache.avro.data.TimeConversions.TimeConversion TIME_CONVERSION = new org.apache.avro.data.TimeConversions.TimeConversion();
-  protected static final org.apache.avro.data.TimeConversions.TimestampConversion TIMESTAMP_CONVERSION = new org.apache.avro.data.TimeConversions.TimestampConversion();
-  protected static final org.apache.avro.Conversions.DecimalConversion DECIMAL_CONVERSION = new org.apache.avro.Conversions.DecimalConversion();
-
-  private static final org.apache.avro.Conversion<?>[] conversions =
-      new org.apache.avro.Conversion<?>[] {
-      TIMESTAMP_CONVERSION,
-      null,
-      null,
-      null,
-      null
-  };
-
-  @Override
-  public org.apache.avro.Conversion<?> getConversion(int field) {
-    return conversions[field];
   }
 
   // Used by DatumReader.  Applications should not call.
   @SuppressWarnings(value="unchecked")
   public void put(int field$, java.lang.Object value$) {
     switch (field$) {
-    case 0: timestamp = (org.joda.time.DateTime)value$; break;
-    case 1: device_id = (java.lang.CharSequence)value$; break;
-    case 2: vibration1 = (java.lang.Double)value$; break;
-    case 3: vibration2 = (java.lang.Double)value$; break;
+    case 0: vibration1 = (java.lang.Double)value$; break;
+    case 1: vibration2 = (java.lang.Double)value$; break;
     default: throw new org.apache.avro.AvroRuntimeException("Bad index");
     }
-  }
-
-  /**
-   * Gets the value of the 'timestamp' field.
-   * @return The value of the 'timestamp' field.
-   */
-  public org.joda.time.DateTime getTimestamp() {
-    return timestamp;
-  }
-
-  /**
-   * Sets the value of the 'timestamp' field.
-   * @param value the value to set.
-   */
-  public void setTimestamp(org.joda.time.DateTime value) {
-    this.timestamp = value;
-  }
-
-  /**
-   * Gets the value of the 'device_id' field.
-   * @return The value of the 'device_id' field.
-   */
-  public java.lang.CharSequence getDeviceId() {
-    return device_id;
-  }
-
-  /**
-   * Sets the value of the 'device_id' field.
-   * @param value the value to set.
-   */
-  public void setDeviceId(java.lang.CharSequence value) {
-    this.device_id = value;
   }
 
   /**
@@ -216,9 +155,7 @@ public class VibrationData extends org.apache.avro.specific.SpecificRecordBase i
   public static class Builder extends org.apache.avro.specific.SpecificRecordBuilderBase<VibrationData>
     implements org.apache.avro.data.RecordBuilder<VibrationData> {
 
-    private org.joda.time.DateTime timestamp;
-    private java.lang.CharSequence device_id;
-    private java.lang.Double vibration1;
+    private double vibration1;
     private java.lang.Double vibration2;
 
     /** Creates a new Builder */
@@ -232,21 +169,13 @@ public class VibrationData extends org.apache.avro.specific.SpecificRecordBase i
      */
     private Builder(io.pravega.example.iiotdemo.flinkprocessor.VibrationData.Builder other) {
       super(other);
-      if (isValidValue(fields()[0], other.timestamp)) {
-        this.timestamp = data().deepCopy(fields()[0].schema(), other.timestamp);
+      if (isValidValue(fields()[0], other.vibration1)) {
+        this.vibration1 = data().deepCopy(fields()[0].schema(), other.vibration1);
         fieldSetFlags()[0] = true;
       }
-      if (isValidValue(fields()[1], other.device_id)) {
-        this.device_id = data().deepCopy(fields()[1].schema(), other.device_id);
+      if (isValidValue(fields()[1], other.vibration2)) {
+        this.vibration2 = data().deepCopy(fields()[1].schema(), other.vibration2);
         fieldSetFlags()[1] = true;
-      }
-      if (isValidValue(fields()[2], other.vibration1)) {
-        this.vibration1 = data().deepCopy(fields()[2].schema(), other.vibration1);
-        fieldSetFlags()[2] = true;
-      }
-      if (isValidValue(fields()[3], other.vibration2)) {
-        this.vibration2 = data().deepCopy(fields()[3].schema(), other.vibration2);
-        fieldSetFlags()[3] = true;
       }
     }
 
@@ -256,99 +185,14 @@ public class VibrationData extends org.apache.avro.specific.SpecificRecordBase i
      */
     private Builder(io.pravega.example.iiotdemo.flinkprocessor.VibrationData other) {
             super(SCHEMA$);
-      if (isValidValue(fields()[0], other.timestamp)) {
-        this.timestamp = data().deepCopy(fields()[0].schema(), other.timestamp);
+      if (isValidValue(fields()[0], other.vibration1)) {
+        this.vibration1 = data().deepCopy(fields()[0].schema(), other.vibration1);
         fieldSetFlags()[0] = true;
       }
-      if (isValidValue(fields()[1], other.device_id)) {
-        this.device_id = data().deepCopy(fields()[1].schema(), other.device_id);
+      if (isValidValue(fields()[1], other.vibration2)) {
+        this.vibration2 = data().deepCopy(fields()[1].schema(), other.vibration2);
         fieldSetFlags()[1] = true;
       }
-      if (isValidValue(fields()[2], other.vibration1)) {
-        this.vibration1 = data().deepCopy(fields()[2].schema(), other.vibration1);
-        fieldSetFlags()[2] = true;
-      }
-      if (isValidValue(fields()[3], other.vibration2)) {
-        this.vibration2 = data().deepCopy(fields()[3].schema(), other.vibration2);
-        fieldSetFlags()[3] = true;
-      }
-    }
-
-    /**
-      * Gets the value of the 'timestamp' field.
-      * @return The value.
-      */
-    public org.joda.time.DateTime getTimestamp() {
-      return timestamp;
-    }
-
-    /**
-      * Sets the value of the 'timestamp' field.
-      * @param value The value of 'timestamp'.
-      * @return This builder.
-      */
-    public io.pravega.example.iiotdemo.flinkprocessor.VibrationData.Builder setTimestamp(org.joda.time.DateTime value) {
-      validate(fields()[0], value);
-      this.timestamp = value;
-      fieldSetFlags()[0] = true;
-      return this;
-    }
-
-    /**
-      * Checks whether the 'timestamp' field has been set.
-      * @return True if the 'timestamp' field has been set, false otherwise.
-      */
-    public boolean hasTimestamp() {
-      return fieldSetFlags()[0];
-    }
-
-
-    /**
-      * Clears the value of the 'timestamp' field.
-      * @return This builder.
-      */
-    public io.pravega.example.iiotdemo.flinkprocessor.VibrationData.Builder clearTimestamp() {
-      fieldSetFlags()[0] = false;
-      return this;
-    }
-
-    /**
-      * Gets the value of the 'device_id' field.
-      * @return The value.
-      */
-    public java.lang.CharSequence getDeviceId() {
-      return device_id;
-    }
-
-    /**
-      * Sets the value of the 'device_id' field.
-      * @param value The value of 'device_id'.
-      * @return This builder.
-      */
-    public io.pravega.example.iiotdemo.flinkprocessor.VibrationData.Builder setDeviceId(java.lang.CharSequence value) {
-      validate(fields()[1], value);
-      this.device_id = value;
-      fieldSetFlags()[1] = true;
-      return this;
-    }
-
-    /**
-      * Checks whether the 'device_id' field has been set.
-      * @return True if the 'device_id' field has been set, false otherwise.
-      */
-    public boolean hasDeviceId() {
-      return fieldSetFlags()[1];
-    }
-
-
-    /**
-      * Clears the value of the 'device_id' field.
-      * @return This builder.
-      */
-    public io.pravega.example.iiotdemo.flinkprocessor.VibrationData.Builder clearDeviceId() {
-      device_id = null;
-      fieldSetFlags()[1] = false;
-      return this;
     }
 
     /**
@@ -364,10 +208,10 @@ public class VibrationData extends org.apache.avro.specific.SpecificRecordBase i
       * @param value The value of 'vibration1'.
       * @return This builder.
       */
-    public io.pravega.example.iiotdemo.flinkprocessor.VibrationData.Builder setVibration1(java.lang.Double value) {
-      validate(fields()[2], value);
+    public io.pravega.example.iiotdemo.flinkprocessor.VibrationData.Builder setVibration1(double value) {
+      validate(fields()[0], value);
       this.vibration1 = value;
-      fieldSetFlags()[2] = true;
+      fieldSetFlags()[0] = true;
       return this;
     }
 
@@ -376,7 +220,7 @@ public class VibrationData extends org.apache.avro.specific.SpecificRecordBase i
       * @return True if the 'vibration1' field has been set, false otherwise.
       */
     public boolean hasVibration1() {
-      return fieldSetFlags()[2];
+      return fieldSetFlags()[0];
     }
 
 
@@ -385,8 +229,7 @@ public class VibrationData extends org.apache.avro.specific.SpecificRecordBase i
       * @return This builder.
       */
     public io.pravega.example.iiotdemo.flinkprocessor.VibrationData.Builder clearVibration1() {
-      vibration1 = null;
-      fieldSetFlags()[2] = false;
+      fieldSetFlags()[0] = false;
       return this;
     }
 
@@ -404,9 +247,9 @@ public class VibrationData extends org.apache.avro.specific.SpecificRecordBase i
       * @return This builder.
       */
     public io.pravega.example.iiotdemo.flinkprocessor.VibrationData.Builder setVibration2(java.lang.Double value) {
-      validate(fields()[3], value);
+      validate(fields()[1], value);
       this.vibration2 = value;
-      fieldSetFlags()[3] = true;
+      fieldSetFlags()[1] = true;
       return this;
     }
 
@@ -415,7 +258,7 @@ public class VibrationData extends org.apache.avro.specific.SpecificRecordBase i
       * @return True if the 'vibration2' field has been set, false otherwise.
       */
     public boolean hasVibration2() {
-      return fieldSetFlags()[3];
+      return fieldSetFlags()[1];
     }
 
 
@@ -425,7 +268,7 @@ public class VibrationData extends org.apache.avro.specific.SpecificRecordBase i
       */
     public io.pravega.example.iiotdemo.flinkprocessor.VibrationData.Builder clearVibration2() {
       vibration2 = null;
-      fieldSetFlags()[3] = false;
+      fieldSetFlags()[1] = false;
       return this;
     }
 
@@ -434,10 +277,8 @@ public class VibrationData extends org.apache.avro.specific.SpecificRecordBase i
     public VibrationData build() {
       try {
         VibrationData record = new VibrationData();
-        record.timestamp = fieldSetFlags()[0] ? this.timestamp : (org.joda.time.DateTime) defaultValue(fields()[0], record.getConversion(0));
-        record.device_id = fieldSetFlags()[1] ? this.device_id : (java.lang.CharSequence) defaultValue(fields()[1], record.getConversion(1));
-        record.vibration1 = fieldSetFlags()[2] ? this.vibration1 : (java.lang.Double) defaultValue(fields()[2], record.getConversion(2));
-        record.vibration2 = fieldSetFlags()[3] ? this.vibration2 : (java.lang.Double) defaultValue(fields()[3], record.getConversion(3));
+        record.vibration1 = fieldSetFlags()[0] ? this.vibration1 : (java.lang.Double) defaultValue(fields()[0]);
+        record.vibration2 = fieldSetFlags()[1] ? this.vibration2 : (java.lang.Double) defaultValue(fields()[1]);
         return record;
       } catch (java.lang.Exception e) {
         throw new org.apache.avro.AvroRuntimeException(e);

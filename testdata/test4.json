@@ -1,0 +1,1 @@
+{"TempData": {"io.pravega.example.iiotdemo.flinkprocessor.TempData": {"timestamp": 1528154546570, "temp_celsius": {"double": 0.8933708081139133}, "device_id": "0002"}}, "VibrationData": null, "PressureData": null}
