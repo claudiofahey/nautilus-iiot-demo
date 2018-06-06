@@ -19,8 +19,8 @@ import java.util.concurrent.TimeUnit;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 
-public class AsyncIOTest {
-    private static Logger log = LoggerFactory.getLogger(AsyncIOTest.class);
+public class CallWebServiceStatelessAsyncTest1 {
+    private static Logger log = LoggerFactory.getLogger(CallWebServiceStatelessAsyncTest1.class);
 
     @Test
     public void Test1() throws Exception {

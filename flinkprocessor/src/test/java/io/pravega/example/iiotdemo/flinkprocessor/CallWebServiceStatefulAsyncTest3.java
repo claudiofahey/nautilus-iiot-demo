@@ -27,8 +27,8 @@ import java.util.concurrent.TimeUnit;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 
 // This demonstrates stateful AsyncIO. Unfortunately this is not supported as of Flink 1.5 so it doesn't work.
-public class AsyncIOTest3 {
-    private static Logger log = LoggerFactory.getLogger(AsyncIOTest3.class);
+public class CallWebServiceStatefulAsyncTest3 {
+    private static Logger log = LoggerFactory.getLogger(CallWebServiceStatefulAsyncTest3.class);
 
     @Test
     public void Test1() throws Exception {

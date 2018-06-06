@@ -35,8 +35,9 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 
-public class CallWebServiceTest5 {
-    private static Logger log = LoggerFactory.getLogger(CallWebServiceTest5.class);
+// TODO: This class is incomplete. It is intended to show aggregation of a window before calling a stateful web service.
+public class CallWebServiceStatefulSyncAggTest5 {
+    private static Logger log = LoggerFactory.getLogger(CallWebServiceStatefulSyncAggTest5.class);
 
     @Test
     public void Test1() throws Exception {

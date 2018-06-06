@@ -12,8 +12,6 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks;
-import org.apache.flink.streaming.api.functions.async.ResultFuture;
-import org.apache.flink.streaming.api.functions.async.RichAsyncFunction;
 import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
@@ -34,13 +32,18 @@ import java.util.concurrent.CompletableFuture;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 
-public class CallWebServiceTest4 {
-    private static Logger log = LoggerFactory.getLogger(CallWebServiceTest4.class);
+// This demonstrates how to call a stateful web service from a Flink job.
+// The web service could be a Python Flask application, TF Serving, an R application, etc..
+// Because AsyncIO does not currently allow state, we must use a sync call to a ProcessWindowFunction.
+public class CallWebServiceStatefulSyncTest4 {
+    private static Logger log = LoggerFactory.getLogger(CallWebServiceStatefulSyncTest4.class);
 
     @Test
     public void Test1() throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setParallelism(1);
+
+        // Create data simulating multiple devices sending sensor data periodically.
         List<InputData> list = new ArrayList<>();
         for (int t = 0 ; t < 9 ; t++) {
             for (int d = 0 ; d < 2 ; d++) {
@@ -53,6 +56,7 @@ public class CallWebServiceTest4 {
         DataStream<InputData> ds = env.fromCollection(list);
         ds.printToErr();
 
+        // Assign event time.
         AssignerWithPeriodicWatermarks<InputData> timestampExtractor = new BoundedOutOfOrdernessTimestampExtractor<InputData>(Time.milliseconds(1)) {
             @Override
             public long extractTimestamp(InputData element) {
@@ -62,13 +66,12 @@ public class CallWebServiceTest4 {
 
         DataStream<InputData> timestamped = ds.assignTimestampsAndWatermarks(timestampExtractor).name("Extract Event Time");
         KeyedStream<InputData, Tuple> keyedStream = timestamped.keyBy("device_id");
-        keyedStream.reduce(null);
         keyedStream
-            .window(SlidingEventTimeWindows.of(Time.milliseconds(1000), Time.milliseconds(1000)))
-            .process(new MyProcessFunc());
+                // build a 1 second window for each device.
+                .window(SlidingEventTimeWindows.of(Time.milliseconds(1000), Time.milliseconds(1000)))
+                .process(new MyProcessFunc())
+                .printToErr();
 //         = timestamped.keyBy("device_id");
-//        keyedStream.printToErr();
-//        AsyncDataStream.unorderedWait(ds, new AsyncFunc(), 10000, TimeUnit.MILLISECONDS, 100).printToErr();
         env.execute();
     }
 
@@ -114,6 +117,34 @@ public class CallWebServiceTest4 {
         }
     }
 
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class WebSvcInput extends InputData {
+        public String state;
+        public List<InputData> data;
+
+        @Override
+        public String toString() {
+            return "WebSvcInput{" +
+                    "state='" + state + '\'' +
+                    ", data=" + data +
+                    '}';
+        }
+    }
+
+    @JsonIgnoreProperties(ignoreUnknown = true)
+    public static class WebSvcOutput extends OutputData {
+        public String state;
+        public List<OutputData> data;
+
+        @Override
+        public String toString() {
+            return "WebSvcOutput{" +
+                    "state='" + state + '\'' +
+                    ", data=" + data +
+                    '}';
+        }
+    }
+
     private static class MyProcessFunc extends ProcessWindowFunction<InputData, OutputData, Tuple, TimeWindow> {
         private transient AsyncHttpClient asyncHttpClient;
         private transient ObjectMapper objectMapper;
@@ -125,8 +156,8 @@ public class CallWebServiceTest4 {
             objectMapper = new ObjectMapper();
             ValueStateDescriptor<String> descriptor =
                 new ValueStateDescriptor<>(
-                    "mystate", // the state name
-                    TypeInformation.of(new TypeHint<String>() {})); // type information
+                    "mystate",
+                    TypeInformation.of(new TypeHint<String>() {}));
             state = getRuntimeContext().getState(descriptor);
         }
 
@@ -141,72 +172,30 @@ public class CallWebServiceTest4 {
 //            String url = "http://localhost:5001/predict";
             String stateValue = state.value();
             log.info("process: stateValue={}", stateValue);
-//            for (InputData element: elements) {
-//                log.info("process: key={}, element={}", key, element);
-//            }
+            WebSvcInput webSvcInput = new WebSvcInput();
+            webSvcInput.state = stateValue;
+            webSvcInput.data = new ArrayList<>();
+            elements.forEach(webSvcInput.data::add);
             CompletableFuture future = asyncHttpClient
                 .preparePost(url)
-                .setBody(objectMapper.writeValueAsBytes(elements))
+                .setBody(objectMapper.writeValueAsBytes(webSvcInput))
                 .execute()
                 .toCompletableFuture()
                 .thenApply(Response::getResponseBody)
                 .thenAccept((String result) -> {
                     log.info("process: result={}", result);
+                    // TODO: parse result and build OutputData.
+                    OutputData outputData = new OutputData();
+                    outputData.device_id = "test";
+                    out.collect(outputData);
+                    try {
+                        state.update(result);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 });
             future.get();
         }
     }
 
-    private static class AsyncFunc extends RichAsyncFunction<InputData, OutputData> {
-        private transient AsyncHttpClient asyncHttpClient;
-        private transient ObjectMapper objectMapper;
-        private transient ValueState<String> state;
-
-        @Override
-        public void open(Configuration parameters) throws Exception {
-            asyncHttpClient = asyncHttpClient();
-            objectMapper = new ObjectMapper();
-            ValueStateDescriptor<String> descriptor =
-                    new ValueStateDescriptor<>(
-                            "mystate", // the state name
-                            TypeInformation.of(new TypeHint<String>() {})); // type information
-            // TODO: below returns java.lang.UnsupportedOperationException: State is not supported in rich async functions.
-            state = getRuntimeContext().getState(descriptor);
-        }
-
-        @Override
-        public void close() throws Exception {
-            asyncHttpClient.close();
-        }
-
-        @Override
-        public void asyncInvoke(final InputData input, final ResultFuture<OutputData> resultFuture) throws Exception {
-//            String url = "http://httpbin.org/post";
-//            String url = "http://localhost:8123/post";
-            String url = "http://localhost:5001/predict";
-            String stateValue = state.value();
-            log.info("stateValue={}", stateValue);
-            asyncHttpClient
-                .preparePost(url)
-                .setBody(objectMapper.writeValueAsBytes(input))
-                .execute()
-                .toCompletableFuture()
-                .thenApply(Response::getResponseBody)
-                .thenAccept((String result) -> {
-                    try {
-                        List<OutputData> outputData = objectMapper.readValue(
-                            result,
-                            objectMapper.getTypeFactory().constructCollectionType(List.class, OutputData.class));
-                        state.update("new state");
-                        resultFuture.complete(outputData);
-                    } catch (IOException e) {
-                        resultFuture.completeExceptionally(e);
-                    }
-                })
-                .exceptionally(e -> {
-                    resultFuture.completeExceptionally(e);
-                    return null;
-                });
-        }
-    }
 }

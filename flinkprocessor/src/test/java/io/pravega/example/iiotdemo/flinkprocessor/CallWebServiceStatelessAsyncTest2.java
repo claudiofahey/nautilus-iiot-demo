@@ -17,14 +17,15 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 
-public class AsyncIOTest2 {
-    private static Logger log = LoggerFactory.getLogger(AsyncIOTest2.class);
+// This demonstrates how to call a stateless web service from a Flink job.
+// The web service could be a Python Flask application, TF Serving, an R application, etc..
+public class CallWebServiceStatelessAsyncTest2 {
+    private static Logger log = LoggerFactory.getLogger(CallWebServiceStatelessAsyncTest2.class);
 
     @Test
     public void Test1() throws Exception {
