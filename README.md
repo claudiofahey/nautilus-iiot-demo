@@ -71,6 +71,12 @@ cd hadoop-connectors
 
 ### Run Applications
 
+```
+mvn install:install-file \
+-Dfile=pravega-credentials-0.6-13013.3f8d24f.jar \
+-DpomFile=pravega-credentials-0.6-13013.3f8d24f.pom
+```
+
 - Build the Gateway.
   ```./gradlew gateway:distTar```
 
@@ -132,7 +138,7 @@ apt-get install default-jdk
 
 Install from <https://www.jetbrains.com/idea>.
 Enable the Lombok plugin. 
-Enable Annotations (settings -> build, execution, deployment, -> compiler -> annotation processors). 
+Enable Annotations (settings -> build, execution, deployment, -> compiler -> annotation processors).
 
 # References
 
