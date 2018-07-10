@@ -20,6 +20,7 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,6 +36,7 @@ import static org.asynchttpclient.Dsl.asyncHttpClient;
 // This demonstrates how to call a stateful web service from a Flink job.
 // The web service could be a Python Flask application, TF Serving, an R application, etc..
 // Because AsyncIO does not currently allow state, we must use a sync call to a ProcessWindowFunction.
+@Ignore()
 public class CallWebServiceStatefulSyncTest4 {
     private static Logger log = LoggerFactory.getLogger(CallWebServiceStatefulSyncTest4.class);
 

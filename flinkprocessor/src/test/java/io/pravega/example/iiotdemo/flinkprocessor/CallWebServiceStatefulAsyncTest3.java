@@ -14,6 +14,7 @@ import org.apache.flink.streaming.api.functions.async.ResultFuture;
 import org.apache.flink.streaming.api.functions.async.RichAsyncFunction;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 
 // This demonstrates stateful AsyncIO. Unfortunately this is not supported as of Flink 1.5 so it doesn't work.
+@Ignore()
 public class CallWebServiceStatefulAsyncTest3 {
     private static Logger log = LoggerFactory.getLogger(CallWebServiceStatefulAsyncTest3.class);
 

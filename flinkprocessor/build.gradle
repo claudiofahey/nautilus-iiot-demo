@@ -43,6 +43,10 @@ dependencies {
     compile "org.asynchttpclient:async-http-client:2.4.7"
     compile "org.apache.avro:avro:1.8.2"
 
+    if (includeNautilusCredentials.toBoolean()) {
+        compile "com.emc.nautilus:pravega-credentials:${nautilusCredentials}"
+    }
+
     // Below commented out because we get a GRPC version conflict.
 //    compile "io.pravega:hadoop-connectors:${pravegaHadoopConnectorVersion}"
 //    compile "org.apache.hadoop:hadoop-common:${hadoopVersion}"

@@ -39,7 +39,24 @@ and visualization on streaming Internet-Of-Things (IOT) data.
   components on Linux and/or Windows servers, desktops, or even laptops.
   For more information, see <https://en.wikipedia.org/wiki/Docker_(software)>.
 
-## Running the Demo
+## Building and Running the Demo
+
+### Install Operating System
+
+Install Ubuntu 16.04 LTS. Other operating systems can also be used but the commands below have only been tested
+on this version.
+
+### Install Java
+
+```
+apt-get install default-jdk
+```
+
+### Install IntelliJ
+
+Install from <https://www.jetbrains.com/idea>.
+Enable the Lombok plugin. 
+Enable Annotations (settings -> build, execution, deployment, -> compiler -> annotation processors).
 
 ### Install Docker and Docker Compose
 
@@ -55,21 +72,11 @@ and <https://docs.docker.com/compose/install/>.
 
 - Import Kibana objects from `taxidemo-kibana-export.json`.
 
-### Build Pravega and Connectors
+### Install Pravega Credentials Library
 
-```
-cd pravega
-./gradlew install 
-./gradlew startStandalone
+This must be performed on your build system.
 
-cd flink-connectors
-./gradlew install
-
-cd hadoop-connectors
-./gradlew install
-```
-
-### Run Applications
+Obtain pravega-credentials-0.6-13013.3f8d24f.jar and pravega-credentials-0.6-13013.3f8d24f.pom.
 
 ```
 mvn install:install-file \
@@ -77,21 +84,63 @@ mvn install:install-file \
 -DpomFile=pravega-credentials-0.6-13013.3f8d24f.pom
 ```
 
-- Build the Gateway.
-  ```./gradlew gateway:distTar```
+### Run Gateway in IntelliJ
 
-- Build Docker containers.
-  ```docker-compose build```
+To run the Gateway in IntelliJ, you must set the following environment variables:
 
-- Start Pravega, Gateway, and Streaming Data Generator.
-  ```docker-compose up -d```
+- PRAVEGA_CONTROLLER=tcp://${pravegaControllerIP}:9091
+- PRAVEGA_SCOPE=iot
+- ROUTING_KEY_ATTRIBUTE_NAME=device_id
+- pravega_client_auth_loadDynamic=true
+- pravega_client_auth_method=nautilus
+- NAUTILUS_GUARDIAN_URL=https://${nautilusMasterIP}/auth
+- NAUTILUS_USERNAME=${username}
+- NAUTILUS_PASSWORD=${password}
 
-### Run Flink Jobs
+Also, set the following VM options:
+
+- -Droot.log.level=DEBUG
+
+### Run Gateway in Docker
+
+```
+export PRAVEGA_HOST_ADDRESS=${pravegaControllerIP}
+export PRAVEGA_PORT=9091
+export pravega_client_auth_loadDynamic=true
+export pravega_client_auth_method=nautilus
+export NAUTILUS_GUARDIAN_URL=https://${nautilusMasterIP}/auth
+export NAUTILUS_USERNAME=${username}
+export NAUTILUS_PASSWORD=${password}
+./gradlew gateway:distTar
+docker-compose build gateway
+docker-compose up gateway
+```
+
+### Run Streaming Data Generator in Docker
+
+This will run the Streaming Data Generator in Docker.
+It will send data to the Gateway running on ${GATEWAY_ADDRESS}.
+
+```
+export GATEWAY_ADDRESS=${HOST_IP}
+docker-compose build streaming_data_generator
+docker-compose up streaming_data_generator
+```
+
+### Run Flink Jobs outside Nautilus
 
 - The Flink jobs can be executed with Nautilus, another Flink cluster, or in standalone mode.  
   In standalone mode, a mini Flink cluster will execute within the application process.
   When run in the IntelliJ IDE, standalone mode will be used by default.
   
+- When Flink jobs are run outside of Nautilus (e.g. in Intellij) and that need to connect to Pravega
+  running in Nautilus, you must set the following authentication environment variables:
+  - pravega_client_auth_loadDynamic=true
+  - pravega_client_auth_method=nautilus
+  - NAUTILUS_GUARDIAN_URL=https://${nautilusMasterIP}/auth
+  - NAUTILUS_USERNAME=${username}
+  - NAUTILUS_PASSWORD=${password}
+
 - Flink jobs are in the flinkprocessor directory.
 
 - To view the raw data streaming on the console, run the job by using the following parameters:
@@ -121,24 +170,21 @@ mvn install:install-file \
 --elastic-delete-index true
 ```
 
-## Building the Demo
-
-### Install Operating System
-
-Install Ubuntu 16.04 LTS. Other operating systems can also be used but the commands below have only been tested
-on this version.
-
-### Install Java
+### Run Flink Jobs in Nautilus
 
 ```
-apt-get install default-jdk
+./gradlew flinkprocessor:build
 ```
 
-### Install IntelliJ
+1. Nautilus -> Analytics -> Apps -> (+).
+2. Name: StreamToConsoleJob
+3. Artifact: io.pravega.example.iiotdemo:iiotdemo-flinkprocessor:0.2.0-SNAPSHOT
+4. Configuration:
+   Parallelism: 1
+   Property: jobClass: io.pravega.example.iiotdemo.flinkprocessor.StreamToConsoleJob
+   Stream: input-stream: iot/data 
+5. Click Launch.
 
-Install from <https://www.jetbrains.com/idea>.
-Enable the Lombok plugin. 
-Enable Annotations (settings -> build, execution, deployment, -> compiler -> annotation processors).
 
 # References
 
@@ -149,3 +195,21 @@ Enable Annotations (settings -> build, execution, deployment, -> compiler -> ann
 - <https://jersey.java.net/documentation/latest/getting-started.html>
 - <http://www.oracle.com/webfolder/technetwork/tutorials/obe/java/griz_jersey_intro/Grizzly-Jersey-Intro.html>
 - <https://github.com/deviantony/docker-elk>
+
+# Appendix
+
+### Build Pravega and Connectors (optional)
+
+These steps are only required if you want to use the latest version of the Pravega dependencies.
+
+```
+cd pravega
+./gradlew install 
+./gradlew startStandalone
+
+cd flink-connectors
+./gradlew install
+
+cd hadoop-connectors
+./gradlew install
+```

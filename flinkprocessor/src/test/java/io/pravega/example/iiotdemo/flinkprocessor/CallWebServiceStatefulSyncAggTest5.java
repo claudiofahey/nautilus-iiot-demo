@@ -23,6 +23,7 @@ import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 import org.asynchttpclient.AsyncHttpClient;
 import org.asynchttpclient.Response;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +37,7 @@ import java.util.concurrent.CompletableFuture;
 import static org.asynchttpclient.Dsl.asyncHttpClient;
 
 // TODO: This class is incomplete. It is intended to show aggregation of a window before calling a stateful web service.
+@Ignore()
 public class CallWebServiceStatefulSyncAggTest5 {
     private static Logger log = LoggerFactory.getLogger(CallWebServiceStatefulSyncAggTest5.class);
 
