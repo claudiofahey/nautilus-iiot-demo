@@ -70,7 +70,7 @@ and <https://docs.docker.com/compose/install/>.
 - Open Kibana. 
   <http://localhost:5601/>
 
-- Import Kibana objects from `taxidemo-kibana-export.json`.
+- Import Kibana objects from [elasticsearch](elasticsearch).
 
 ### Install Pravega Credentials Library
 
@@ -127,12 +127,21 @@ docker-compose build streaming_data_generator
 docker-compose up streaming_data_generator
 ```
 
-### Run Flink Jobs outside Nautilus
+### Run Flink Jobs
+
+- Flink jobs are in the [flinkprocessor](flinkprocessor) directory.
+
+- Build the uber jar `flinkprocessor/build/libs/iiotdemo-flinkprocessor-0.2.0-SNAPSHOT-all.jar`:
+```
+./gradlew flinkprocessor:build
+```
 
 - The Flink jobs can be executed with Nautilus, another Flink cluster, or in standalone mode.  
   In standalone mode, a mini Flink cluster will execute within the application process.
   When run in the IntelliJ IDE, standalone mode will be used by default.
-  
+
+### Run Flink Jobs outside Nautilus
+
 - When Flink jobs are run outside of Nautilus (e.g. in Intellij) and that need to connect to Pravega
   running in Nautilus, you must set the following authentication environment variables:
   - pravega_client_auth_loadDynamic=true
@@ -141,16 +150,14 @@ docker-compose up streaming_data_generator
   - NAUTILUS_USERNAME=${username}
   - NAUTILUS_PASSWORD=${password}
 
-- Flink jobs are in the flinkprocessor directory.
-
-- To view the raw data streaming on the console, run the job by using the following parameters:
+- Stream the raw data to the console (stderr):
 ```
 --jobClass io.pravega.example.iiotdemo.flinkprocessor.StreamToConsoleJob
 --controller tcp://$PRAVEGA_HOST_ADDRESS:9090 
 --input-stream iot/data 
 ```
 
-- Run the Raw Data job by using the following parameters:
+- Stream the raw data to Elasticsearch:
 ```
 --jobClass io.pravega.example.iiotdemo.flinkprocessor.StreamRawDataToElasticsearchJob
 --controller tcp://$PRAVEGA_HOST_ADDRESS:9090 
@@ -160,7 +167,7 @@ docker-compose up streaming_data_generator
 --elastic-delete-index true
 ```
 
-- Run the Extract Statistics job with the following parameters:
+- Extract statistics and write to Elasticsearch:
 ```
 --jobClass io.pravega.example.iiotdemo.flinkprocessor.StreamStatisticsToElasticsearchJob
 --controller tcp://$PRAVEGA_HOST_ADDRESS:9090 
@@ -170,11 +177,7 @@ docker-compose up streaming_data_generator
 --elastic-delete-index true
 ```
 
-### Run Flink Jobs in Nautilus
-
-```
-./gradlew flinkprocessor:build
-```
+### Run Flink Jobs in Nautilus using the Nautilus UI
 
 1. Nautilus -> Analytics -> Apps -> (+).
 2. Name: StreamToConsoleJob
@@ -185,6 +188,26 @@ docker-compose up streaming_data_generator
    Stream: input-stream: iot/data 
 5. Click Launch.
 
+### Run Flink Jobs in Nautilus using the Flink UI
+
+- Stream the raw data to the console (stderr):
+  - Program Arguments:
+```
+--jobClass io.pravega.example.iiotdemo.flinkprocessor.StreamToConsoleJob
+--controller tcp://controller.pravega.l4lb.thisdcos.directory:9091
+--input-stream iot/data 
+```
+
+- Stream the raw data to Elasticsearch:
+  - Program Arguments:
+```
+--jobClass io.pravega.example.iiotdemo.flinkprocessor.StreamRawDataToElasticsearchJob
+--controller tcp://controller.pravega.l4lb.thisdcos.directory:9091
+--input-stream iot/data 
+--elastic-sink true 
+--elastic-host $ELASTIC_HOST 
+--elastic-delete-index true
+```
 
 # References
 

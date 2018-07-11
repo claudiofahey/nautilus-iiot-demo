@@ -28,10 +28,11 @@ def sine_wave_generator(temp_celsius_low, temp_celsius_high, temp_celsius_period
         temp_celsius = (temp_celsius_high - temp_celsius_low) * temp_celsius_normalized + temp_celsius_low
         data = {'timestamp': t, 'event_type': 'temp', 'device_id': device_id, 'temp_celsius': temp_celsius}
         yield data
-        # vibration1 = 10.0 * (temp_celsius + 273.15)
-        # vibration2 = 20.0 * (temp_celsius + 273.15) + 100.0
-        # data = {'timestamp': t, 'event_type': 'vibration', 'device_id': device_id, 'vibration1': vibration1, 'vibration2': vibration2}
-        # yield data
+        if True:
+            vibration1 = 10.0 * (temp_celsius + 273.15)
+            vibration2 = 20.0 * (temp_celsius + 273.15) + 100.0
+            data = {'timestamp': t, 'event_type': 'vibration', 'device_id': device_id, 'vibration1': vibration1, 'vibration2': vibration2}
+            yield data
         t += int(1000.0 * report_period_sec)
 
 def single_generator_process(options, device_id):
@@ -54,7 +55,7 @@ def single_generator_process(options, device_id):
             sleep_sec = t/1000.0 - time()
             if sleep_sec > 0.0:
                 sleep(sleep_sec)
-            if True:
+            if False:
                 if data['event_type'] == 'temp':
                     data = {
                         'timestamp': data['timestamp'],

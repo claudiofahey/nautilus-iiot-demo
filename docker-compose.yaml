@@ -46,7 +46,7 @@ services:
       - --gateway-url
       - http://${GATEWAY_ADDRESS:-gateway}:3000/data
       - --num-devices
-      - "2"
+      - "10"
 
   prediction_web_service_python:
     build:
