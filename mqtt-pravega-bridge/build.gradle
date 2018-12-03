@@ -1,0 +1,61 @@
+plugins {
+    id 'com.github.johnrengelman.shadow' version '1.2.4'
+}
+
+group 'com.dell.mqtt'
+version '1.0-SNAPSHOT'
+
+task wrapper(type: Wrapper) {
+  gradleVersion = '3.1'
+  distributionUrl = "https://services.gradle.org/distributions/gradle-$gradleVersion-all.zip"
+}
+
+apply plugin: 'java'
+apply plugin: "distribution"
+apply plugin: 'application'
+
+sourceCompatibility = 1.8
+mainClassName = 'com.dell.mqtt.pravega.ApplicationMain'
+applicationDefaultJvmArgs = ["-Dlog4j.configuration=file:conf/log4j.properties"]
+archivesBaseName = 'pravega-mqtt-bridge'
+
+repositories {
+    mavenCentral()
+    maven {
+        url "https://repository.apache.org/snapshots"
+    }
+    maven {
+        url "https://oss.sonatype.org/content/repositories/snapshots"
+    }
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.11'
+    compile "org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.0"
+    compile "org.slf4j:slf4j-api:1.6.6"
+    compile "ch.qos.logback:logback-classic:1.0.9"
+    compile "com.google.guava:guava:20.0"
+    compile "io.pravega:pravega-client:0.1.0-SNAPSHOT"
+    compile "io.pravega:pravega-common:0.1.0-SNAPSHOT"
+
+    // common-library dependencies
+    compile files('lib/common-library-1.0-all.jar')
+}
+
+shadowJar {
+    dependencies {
+        include dependency("org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.2.0")
+    }
+}
+
+distributions {
+    main {
+        baseName = archivesBaseName
+        contents {
+            into('lib') {
+                from shadowJar
+                from(project.configurations.shadow)
+            }
+        }
+    }
+}
