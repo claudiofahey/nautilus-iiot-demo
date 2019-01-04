@@ -3,7 +3,7 @@ plugins {
 }
 
 group 'com.dell.mqtt'
-version '1.0-SNAPSHOT'
+version = samplesVersion
 
 task wrapper(type: Wrapper) {
   gradleVersion = '3.1'
@@ -15,6 +15,7 @@ apply plugin: "distribution"
 apply plugin: 'application'
 
 sourceCompatibility = 1.8
+targetCompatibility = 1.8
 mainClassName = 'com.dell.mqtt.pravega.ApplicationMain'
 applicationDefaultJvmArgs = ["-Dlog4j.configuration=file:conf/log4j.properties"]
 archivesBaseName = 'pravega-mqtt-bridge'
@@ -35,11 +36,10 @@ dependencies {
     compile "org.slf4j:slf4j-api:1.6.6"
     compile "ch.qos.logback:logback-classic:1.0.9"
     compile "com.google.guava:guava:20.0"
-    compile "io.pravega:pravega-client:0.1.0-SNAPSHOT"
-    compile "io.pravega:pravega-common:0.1.0-SNAPSHOT"
+    compile "io.pravega:pravega-client:${pravegaVersion}"
 
     // common-library dependencies
-    compile files('lib/common-library-1.0-all.jar')
+//    compile files('lib/common-library-1.0-all.jar')
 }
 
 shadowJar {

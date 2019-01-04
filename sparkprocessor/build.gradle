@@ -16,6 +16,7 @@ targetCompatibility = 1.8
 
 repositories {
     mavenLocal()
+    jcenter()
     mavenCentral()
     maven {
         url "https://repository.apache.org/snapshots"
@@ -23,7 +24,7 @@ repositories {
     maven {
         url "https://oss.sonatype.org/content/repositories/snapshots"
     }
-}
+    maven { url "https://oss.jfrog.org/artifactory/jfrog-dependencies" }}
 
 dependencies {
     compile "org.apache.spark:spark-core_2.11:${sparkVersion}"
@@ -32,7 +33,7 @@ dependencies {
     compile "ch.qos.logback:logback-core:1.2.3"
     compile "ch.qos.logback:logback-classic:1.2.3"
     compile "net.logstash.logback:logstash-logback-encoder:4.11"
-    compile "io.pravega:hadoop-connectors:${pravegaHadoopConnectorVersion}"
+    compile "io.pravega:pravega-connectors-hadoop:${pravegaHadoopConnectorVersion}"
 
     testCompile group: "junit", name: "junit", version: "4.11"
 }

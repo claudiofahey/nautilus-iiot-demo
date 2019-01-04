@@ -1,6 +1,5 @@
 package com.dell.mqtt.pravega;
 
-import com.dell.toyota.common.DataPacket;
 import io.pravega.client.stream.EventStreamWriter;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;

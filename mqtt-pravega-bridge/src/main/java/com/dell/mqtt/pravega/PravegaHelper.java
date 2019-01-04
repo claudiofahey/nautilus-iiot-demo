@@ -1,6 +1,5 @@
 package com.dell.mqtt.pravega;
 
-import com.dell.toyota.common.DataPacket;
 import io.pravega.client.ClientFactory;
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.EventStreamWriter;
