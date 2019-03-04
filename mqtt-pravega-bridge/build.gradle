@@ -37,9 +37,7 @@ dependencies {
     compile "ch.qos.logback:logback-classic:1.0.9"
     compile "com.google.guava:guava:20.0"
     compile "io.pravega:pravega-client:${pravegaVersion}"
-
-    // common-library dependencies
-//    compile files('lib/common-library-1.0-all.jar')
+    compile files ('lib/pravega-keycloak-credentials-shadow.jar')
 }
 
 shadowJar {
