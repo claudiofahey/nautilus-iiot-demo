@@ -52,4 +52,4 @@ services:
     build:
       context: prediction_web_service_python
     ports:
-      - "5001:80"
+      - "5001:5001"

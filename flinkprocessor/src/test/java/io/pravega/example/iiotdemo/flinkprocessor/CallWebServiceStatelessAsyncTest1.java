@@ -53,8 +53,8 @@ public class CallWebServiceStatelessAsyncTest1 {
         @Override
         public void asyncInvoke(final String input, final ResultFuture<String> resultFuture) throws Exception {
 //            String url = "http://httpbin.org/post";
-//            String url = "http://localhost:8123/post";
-            String url = "http://localhost:5001/predict";
+            String url = "http://localhost:8123/post";
+//            String url = "http://localhost:5001/predict";
             asyncHttpClient
                     .preparePost(url)
                     .setBody(input)

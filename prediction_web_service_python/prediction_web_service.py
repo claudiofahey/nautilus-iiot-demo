@@ -17,8 +17,8 @@ app.secret_key = os.urandom(24)
 
 @app.route("/predict", methods=['POST'])
 def predict():
-    input_json = flask.request.data
-    print('input_json=%s' % str(input_json))
+    input_json = flask.request.data.decode("utf-8")
+    print('input_json=%s' % input_json)
     input_json = '[' + input_json + ']'
     input_df = pd.read_json(StringIO(input_json))
     input_df.info()
