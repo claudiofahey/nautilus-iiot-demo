@@ -1,0 +1,4 @@
+{"timestamp":  "2019-04-11T18:00:00.000Z", "camera": 0, "chunk": 0, "data": 100}
+{"timestamp":  "2019-04-11T18:00:00.000Z", "camera": 0, "chunk": 2, "data": 102}
+{"timestamp":  "2019-04-11T18:00:00.000Z", "camera": 0, "chunk": 1, "data": 101}
+{"timestamp":  "2019-04-11T18:20:00.000Z", "camera": 0, "chunk": 0, "data": 3}
