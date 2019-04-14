@@ -6,7 +6,7 @@ set -ex
 
 #export PRAVEGA_CONTROLLER=tcp://${HOST_IP:-127.0.0.1}:9090
 #export PRAVEGA_SCOPE=${PRAVEGA_SCOPE:-examples}
-export PYSPARK_PYTHON=/home/faheyc/anaconda3/envs/spark/bin/python
+export PYSPARK_PYTHON=$PWD/env/bin/python
 
 master=local[2]
 #master=spark://ubuntu:7077

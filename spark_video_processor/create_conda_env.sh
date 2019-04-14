@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-conda create --name spark -c conda-forge \
+conda create -y --prefix env -c conda-forge \
   anaconda \
   ConfigArgParse \
   pyarrow \

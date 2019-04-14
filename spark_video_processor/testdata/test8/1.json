@@ -1,0 +1,8 @@
+{"timestamp":  "2019-04-11T18:00:00.000Z", "camera": 0, "chunk": 0, "num_chunks": 3, "ssrc": 23, "data": "YWJjZAo="}
+{"timestamp":  "2019-04-11T18:00:00.000Z", "camera": 0, "chunk": 2, "num_chunks": 3, "ssrc": 23, "data": "aGkK"}
+{"timestamp":  "2019-04-11T18:00:00.000Z", "camera": 0, "chunk": 1, "num_chunks": 3, "ssrc": 23, "data": "ZWZnCg=="}
+{"timestamp":  "2019-04-11T18:03:00.000Z", "camera": 0, "chunk": 0, "num_chunks": 2, "ssrc": 23, "data": "ZWZnCg=="}
+{"timestamp":  "2019-04-11T18:03:00.000Z", "camera": 0, "chunk": 1, "num_chunks": 2, "ssrc": 23, "data": "aGkK"}
+{"timestamp":  "2019-04-11T18:20:00.000Z", "camera": 0, "chunk": 0, "num_chunks": 3, "ssrc": 23, "data": "eHl6Cg=="}
+{"timestamp":  "2019-04-11T18:20:00.000Z", "camera": 0, "chunk": 1, "num_chunks": 3, "ssrc": 23, "data": "eHl6Cg=="}
+{"timestamp":  "2019-04-11T18:20:00.000Z", "camera": 0, "chunk": 2, "num_chunks": 3, "ssrc": 23, "data": "eHl6Cg=="}
