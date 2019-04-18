@@ -19,22 +19,10 @@ and visualization on streaming Internet-Of-Things (IOT) data.
 - Flink: Apache Flink® is an open-source stream processing framework for distributed, high-performing, always-available, and accurate data streaming applications.
   See <https://flink.apache.org> for more information.
   
-- Streaming Data Generator: A streaming data generator has been
-  created that can playback data and send it to the REST gateway.
-  This is a Python script and is in the [streaming_data_generator](streaming_data_generator) directory.
-  
-- Gateway: This is a REST web service that receives JSON documents from the Streaming Data Generator.
-  It parses the JSON and then writes it to a Pravega stream.
-  This is a Java application and is in the [gateway](gateway) directory.
-
 - Flink Streaming Job: This is a Java application that defines a job that can be executed in the Flink cluster.
   This particular job simply reads the events from Pravega and loads them into Elasticsearch for visualization.
   This is in the [flinkprocessor](flinkprocessor) directory. 
   
-- Elasticsearch: This stores the output of the Flink Streaming Job for visualization.
-
-- Kibana: This provides visualization of the data in Elasticsearch.
-
 - Docker: This demo uses Docker and Docker Compose to greatly simplify the deployment of the various
   components on Linux and/or Windows servers, desktops, or even laptops.
   For more information, see <https://en.wikipedia.org/wiki/Docker_(software)>.
@@ -62,70 +50,6 @@ Enable Annotations (settings -> build, execution, deployment, -> compiler -> ann
 
 See <https://docs.docker.com/install/linux/docker-ce/ubuntu/>
 and <https://docs.docker.com/compose/install/>.
-
-### Install Elasticsearch and Kibana
-
-- `cd docker-elk ; docker-compose up -d`
-
-- Open Kibana. 
-  <http://localhost:5601/>
-
-- Import Kibana objects from [elasticsearch](elasticsearch).
-
-### Install Pravega Credentials Library
-
-This must be performed on your build system.
-
-Obtain pravega-credentials-0.6-13013.3f8d24f.jar and pravega-credentials-0.6-13013.3f8d24f.pom.
-
-```
-mvn install:install-file \
--Dfile=pravega-credentials-0.6-13013.3f8d24f.jar \
--DpomFile=pravega-credentials-0.6-13013.3f8d24f.pom
-```
-
-### Run Gateway in IntelliJ
-
-To run the Gateway in IntelliJ, you must set the following environment variables:
-
-- PRAVEGA_CONTROLLER=tcp://${pravegaControllerIP}:9091
-- PRAVEGA_SCOPE=iot
-- ROUTING_KEY_ATTRIBUTE_NAME=device_id
-- pravega_client_auth_loadDynamic=true
-- pravega_client_auth_method=nautilus
-- NAUTILUS_GUARDIAN_URL=https://${nautilusMasterIP}/auth
-- NAUTILUS_USERNAME=${username}
-- NAUTILUS_PASSWORD=${password}
-
-Also, set the following VM options:
-
-- -Droot.log.level=DEBUG
-
-### Run Gateway in Docker
-
-```
-export PRAVEGA_HOST_ADDRESS=${pravegaControllerIP}
-export PRAVEGA_PORT=9091
-export pravega_client_auth_loadDynamic=true
-export pravega_client_auth_method=nautilus
-export NAUTILUS_GUARDIAN_URL=https://${nautilusMasterIP}/auth
-export NAUTILUS_USERNAME=${username}
-export NAUTILUS_PASSWORD=${password}
-./gradlew gateway:distTar
-docker-compose build gateway
-docker-compose up gateway
-```
-
-### Run Streaming Data Generator in Docker
-
-This will run the Streaming Data Generator in Docker.
-It will send data to the Gateway running on ${GATEWAY_ADDRESS}.
-
-```
-export GATEWAY_ADDRESS=${HOST_IP}
-docker-compose build streaming_data_generator
-docker-compose up streaming_data_generator
-```
 
 ### Run Flink Jobs
 
