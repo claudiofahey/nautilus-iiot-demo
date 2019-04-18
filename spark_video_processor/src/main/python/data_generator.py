@@ -97,7 +97,7 @@ def main():
     logging.basicConfig(level=logging.DEBUG)
     parser = argparse.ArgumentParser(auto_env_var_prefix='GENERATOR_')
     parser.add_argument(
-        '-g', '--gateway', default='localhost:50051',
+        '-g', '--gateway', default='localhost:54672',
         action='store', dest='gateway', help='address:port of Pravega gateway')
     parser.add_argument(
         '--scope', default='examples4',

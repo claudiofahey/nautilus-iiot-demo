@@ -16,7 +16,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -71,6 +70,7 @@ public class PravegaGateway {
     }
 
     static class PravegaServerImpl extends PravegaGatewayGrpc.PravegaGatewayImplBase {
+        static final long DEFAULT_TIMEOUT_MS = 1000;
 
         @Override
         public void createScope(CreateScopeRequest req, StreamObserver<CreateScopeResponse> responseObserver) {
@@ -96,6 +96,9 @@ public class PravegaGateway {
             final URI controllerURI = Parameters.getControllerURI();
             final String scope = req.getScope();
             final String streamName = req.getStream();
+            // TODO: support bounded streams
+            final boolean haveEndStreamCut = false;
+            final long timeoutMs = req.getTimeoutMs() == 0 ? DEFAULT_TIMEOUT_MS : req.getTimeoutMs();
 
             final String readerGroup = UUID.randomUUID().toString().replace("-", "");
             final ReaderGroupConfig readerGroupConfig = ReaderGroupConfig.builder()
@@ -112,8 +115,7 @@ public class PravegaGateway {
                          ReaderConfig.builder().build())) {
                 for (;;) {
                     try {
-                        // TODO: must be able to handle cancellation from client even if there are no events coming in. Perhaps reduce below timeout to 1 sec.
-                        EventRead<ByteBuffer> event = reader.readNextEvent(req.getTimeoutMs());
+                        EventRead<ByteBuffer> event = reader.readNextEvent(timeoutMs);
                         if (event.isCheckpoint()) {
                             ReadEventsResponse response = ReadEventsResponse.newBuilder()
                                     .setCheckpointName(event.getCheckpointName())
@@ -129,12 +131,15 @@ public class PravegaGateway {
                             logger.info("readEvents: response=" + response.toString());
                             responseObserver.onNext(response);
                         } else {
-                            // If this is a bounded stream with an end stream cut, then we
-                            // have reached the end stream cut.
-                            // If this is an unbounded stream, all events have been read and a
-                            // timeout has occurred.
-                            logger.info("readEvents: no more events, completing RPC");
-                            break;
+                            if (haveEndStreamCut) {
+                                // If this is a bounded stream with an end stream cut, then we
+                                // have reached the end stream cut.
+                                logger.info("readEvents: no more events, completing RPC");
+                                break;
+                            } else {
+                                // If this is an unbounded stream, all events have been read and a
+                                // timeout has occurred.
+                            }
                         }
 
                         if (Context.current().isCancelled()) {
@@ -158,31 +163,75 @@ public class PravegaGateway {
         public StreamObserver<WriteEventsRequest> writeEvents(StreamObserver<WriteEventsResponse> responseObserver) {
             return new StreamObserver<WriteEventsRequest>() {
                 ClientFactory clientFactory;
-                EventStreamWriter<ByteBuffer> writer;
+                AbstractEventWriter<ByteBuffer> writer;
+                String scope;
+                String streamName;
+                Boolean useTransaction;
 
                 @Override
                 public void onNext(WriteEventsRequest req) {
                     logger.info("writeEvents: req=" + req.toString());
                     if (writer == null) {
-                        // The scope and stream are set based on the first request only.
-                        // TODO: Check or remove this restriction.
                         final URI controllerURI = Parameters.getControllerURI();
-                        final String scope = req.getScope();
-                        final String streamName = req.getStream();
+                        scope = req.getScope();
+                        streamName = req.getStream();
+                        useTransaction = req.getUseTransaction();
                         clientFactory = ClientFactory.withScope(scope, controllerURI);
-                        writer = clientFactory.createEventWriter(
+                        EventStreamWriter<ByteBuffer> pravegaWriter = clientFactory.createEventWriter(
                                 streamName,
                                 new ByteBufferSerializer(),
                                 EventWriterConfig.builder().build());
+                        if (useTransaction) {
+                            writer = new TransactionalEventWriter<>(pravegaWriter);
+                        } else {
+                            writer = new NonTransactionalEventWriter<>(pravegaWriter);
+                        }
+                        writer.open();
+                    } else {
+                        if (!(req.getScope().isEmpty() || req.getScope().equals(scope))) {
+                            responseObserver.onError(
+                                    Status.INVALID_ARGUMENT
+                                    .withDescription(String.format(
+                                        "Scope must be the same for all events; received=%s, expected=%s",
+                                           req.getScope(), scope))
+                                    .asRuntimeException());
+                            return;
+                        }
+                        if (!(req.getStream().isEmpty() || req.getStream().equals(streamName))) {
+                            responseObserver.onError(
+                                    Status.INVALID_ARGUMENT
+                                            .withDescription(String.format(
+                                                    "Stream must be the same for all events; received=%s, expected=%s",
+                                                    req.getStream(), streamName))
+                                    .asRuntimeException());
+                            return;
+                        }
+                        if (!(req.getUseTransaction() == false || req.getUseTransaction() == useTransaction)) {
+                            responseObserver.onError(Status.INVALID_ARGUMENT
+                                    .withDescription(String.format(
+                                            "UseTransaction must be the same for all events; received=%d, expected=%d",
+                                            req.getUseTransaction(), useTransaction))
+                                    .asRuntimeException());
+                            return;
+                        }
                     }
-                    final CompletableFuture writeFuture = writer.writeEvent(req.getRoutingKey(), req.getEvent().asReadOnlyByteBuffer());
+                    try {
+                        writer.writeEvent(req.getRoutingKey(), req.getEvent().asReadOnlyByteBuffer());
+                    } catch (TxnFailedException e) {
+                        responseObserver.onError(Status.ABORTED.asRuntimeException());
+                        return;
+                    }
                 }
 
                 @Override
                 public void onError(Throwable t) {
                     logger.log(Level.WARNING, "Encountered error in writeEvents", t);
                     if (writer != null) {
-                        writer.close();
+                        try {
+                            writer.close();
+                        } catch (TxnFailedException e) {
+                            // Ignore error
+                        }
                         writer = null;
                     }
                     if (clientFactory != null) {
@@ -194,8 +243,12 @@ public class PravegaGateway {
                 @Override
                 public void onCompleted() {
                     if (writer != null) {
-                        // Flush and close writer.
-                        writer.close();
+                        try {
+                            writer.close();
+                        } catch (TxnFailedException e) {
+                            responseObserver.onError(Status.ABORTED.asRuntimeException());
+                            return;
+                        }
                         writer = null;
                     }
                     if (clientFactory != null) {

@@ -11,7 +11,7 @@ class Parameters {
     }
 
     public static int getListenPort() {
-        return Integer.parseInt(getEnvVar("LISTEN_PORT", "50051"));
+        return Integer.parseInt(getEnvVar("LISTEN_PORT", "54672"));
     }
 
     private static String getEnvVar(String name, String defaultValue) {
