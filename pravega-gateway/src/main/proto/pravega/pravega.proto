@@ -42,11 +42,13 @@ message ReadEventsResponse {
   string checkpoint_name = 4;
 }
 
+// scope, stream, and use_transaction must be the same for all requests in the WriteEvents call.
 message WriteEventsRequest {
   bytes event = 1;
-  string scope = 2;
-  string stream = 3;
-  string routing_key = 4;
+  string routing_key = 2;
+  string scope = 3;
+  string stream = 4;
+  bool use_transaction = 5;
 }
 
 message WriteEventsResponse {
