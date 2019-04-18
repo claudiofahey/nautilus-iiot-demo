@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "io.pravega.example.pravega_gateway";
+
+service PravegaGateway {
+  rpc CreateScope(CreateScopeRequest) returns (CreateScopeResponse) {}
+  rpc CreateStream(CreateStreamRequest) returns (CreateStreamResponse) {}
+  rpc ReadEvents(ReadEventsRequest) returns (stream ReadEventsResponse) {}
+  rpc WriteEvents(stream WriteEventsRequest) returns (WriteEventsResponse) {}
+}
+
+message CreateScopeRequest {
+  string scope = 1;
+}
+
+message CreateScopeResponse {
+  bool created = 1;
+}
+
+message CreateStreamRequest {
+  string scope = 1;
+  string stream = 2;
+  // TODO: scaling policy, etc.
+}
+
+message CreateStreamResponse {
+  bool created = 1;
+}
+
+message ReadEventsRequest {
+  string scope = 1;
+  string stream = 2;
+  int64 timeout_ms = 3;
+}
+
+message ReadEventsResponse {
+  bytes event = 1;
+  string position = 2;
+  string event_pointer = 3;
+  // Empty string if this is not a checkpoint.
+  string checkpoint_name = 4;
+}
+
+message WriteEventsRequest {
+  bytes event = 1;
+  string scope = 2;
+  string stream = 3;
+  string routing_key = 4;
+}
+
+message WriteEventsResponse {
+}
