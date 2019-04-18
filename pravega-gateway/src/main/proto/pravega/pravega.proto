@@ -44,10 +44,19 @@ message ReadEventsResponse {
 
 // scope, stream, and use_transaction must be the same for all requests in the WriteEvents call.
 message WriteEventsRequest {
+  // The event to write. Events must be 1 MiB or less.
   bytes event = 1;
+  // Optional.
   string routing_key = 2;
+  // Must be set in the first request. For subsequent requests, must be the same value or the default (empty).
   string scope = 3;
+  // Must be set in the first request. For subsequent requests, must be the same value or the default (empty).
   string stream = 4;
+  // If true, all events will be written in a transaction and the transaction will be committed when the request
+  // is completed.
+  // If false, all events will be written without a transaction and the writer will be closed when the request
+  // is completed.
+  // Can be set in the first request. For subsequent requests, must be the same value or the default (false).
   bool use_transaction = 5;
 }
 
