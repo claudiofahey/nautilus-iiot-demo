@@ -16,8 +16,65 @@ def main():
              )
     spark.conf.set('spark.sql.execution.arrow.enabled', 'true')
     spark.conf.set('spark.sql.shuffle.partitions', '1')
-    test13(spark)
+    test14(spark)
 
+
+def test14(spark):
+    # ssrc is the synchronization source identifier. See https://en.wikipedia.org/wiki/Real-time_Transport_Protocol.
+    # It should be selected at random by each process that writes records.
+    schema='timestamp timestamp, frame_number int, camera int, ssrc int, data binary'
+
+    controller = os.getenv('PRAVEGA_CONTROLLER', 'tcp://127.0.0.1:9090')
+    scope = os.getenv('PRAVEGA_SCOPE', 'examples')
+    df = (spark
+          .readStream
+          .format("pravega")
+          .option("controller", controller)
+          .option("scope", scope)
+          .option("stream", "video")
+          .option("encoding", "chunked_v1")
+          .load()
+          )
+
+    # Decode JSON event.
+    df = df.withColumnRenamed('event', 'raw_event')
+    df = df.select('*', decode('raw_event', 'UTF-8').alias('event_string'))
+    df = df.select('*', from_json('event_string', schema=schema, options=dict(mode='FAILFAST')).alias('event'))
+    df = df.select('*', 'event.*')
+
+    df = df.withWatermark('timestamp', '60 second')
+
+    @udf(returnType=BinaryType())
+    def parse_checksum(checksum_and_data):
+        return checksum_and_data[0:4]
+
+    @udf(returnType=BinaryType())
+    def parse_data(checksum_and_data):
+        return checksum_and_data[4:]
+
+    @udf(returnType=BooleanType())
+    def is_checksum_correct(checksum, data):
+        expected = struct.unpack('!I', checksum)[0]
+        calculated = zlib.crc32(data)
+        print('expected=%d, calculated=%d' % (expected, calculated))
+        return expected == calculated
+
+    df = df.withColumnRenamed('data', 'checksum_and_data')
+    df = df.select('*', parse_checksum('checksum_and_data').alias('checksum'), parse_data('checksum_and_data').alias('data'))
+    df = df.select('*', is_checksum_correct('checksum', 'data').alias('is_checksum_correct'))
+
+    df.printSchema()
+
+    if True:
+        (df
+         .writeStream
+         .trigger(processingTime='3 seconds')    # limit trigger rate
+         .outputMode('append')
+         .format('console')
+         # .option('truncate', 'false')
+         .start()
+         .awaitTermination()
+         )
 
 def test13(spark):
     # ssrc is the synchronization source identifier. See https://en.wikipedia.org/wiki/Real-time_Transport_Protocol.

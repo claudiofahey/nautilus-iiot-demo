@@ -13,5 +13,5 @@ master=local[2]
 
 spark-submit \
 --master $master \
---packages io.pravega:pravega-connectors-spark:0.4.0-SNAPSHOT \
+--jars ${HOME}/.m2/repository/io/pravega/pravega-connectors-spark/0.4.0-SNAPSHOT/pravega-connectors-spark-0.4.0-SNAPSHOT.jar \
 src/main/python/test2.py

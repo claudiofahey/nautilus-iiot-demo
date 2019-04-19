@@ -88,7 +88,7 @@ def pravega_request_generator(data_generator, scope, stream, max_chunk_size):
             request = pravega.pb.WriteEventsRequest(
                 scope=scope,
                 stream=stream,
-                use_transaction=True,
+                use_transaction=False,
                 event=chunked_event)
             logging.info(request)
             yield request
@@ -130,7 +130,7 @@ def main():
         '--max-chunk-size', default=4096+10, type=int,
         action='store', dest='max_chunk_size', help='Maximum size of chunk (bytes)')
     parser.add_argument(
-        '--fps', default=5.0, type=float,
+        '--fps', default=1.0, type=float,
         action='store', dest='frames_per_sec', help='Number of frames per second per camera')
     options, unparsed = parser.parse_known_args()
 
