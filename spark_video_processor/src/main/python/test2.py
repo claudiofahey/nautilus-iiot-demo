@@ -16,7 +16,55 @@ def main():
              )
     spark.conf.set('spark.sql.execution.arrow.enabled', 'true')
     spark.conf.set('spark.sql.shuffle.partitions', '1')
-    test12(spark)
+    test13(spark)
+
+
+def test13(spark):
+    # ssrc is the synchronization source identifier. See https://en.wikipedia.org/wiki/Real-time_Transport_Protocol.
+    # It should be selected at random by each process that writes records.
+    schema='timestamp timestamp, frame_number int, camera int, ssrc int, data binary'
+
+    controller = os.getenv('PRAVEGA_CONTROLLER', 'tcp://127.0.0.1:9090')
+    scope = os.getenv('PRAVEGA_SCOPE', 'examples5')
+    df = (spark
+          .readStream
+          .format("pravega")
+          .option("controller", controller)
+          .option("scope", scope)
+          .option("stream", "video")
+          .load()
+          )
+
+    @udf(returnType=IntegerType())
+    def parse_chunk_index(event):
+        unpacked = struct.unpack('!bxxxhh', event[0:8])
+        return unpacked[1]
+
+    @udf(returnType=IntegerType())
+    def parse_final_chunk_index(event):
+        unpacked = struct.unpack('!bxxxhh', event[0:8])
+        return unpacked[2]
+
+    @udf(returnType=BinaryType())
+    def parse_payload(event):
+        return event[8:]
+
+    df = df.select('*', parse_chunk_index('event').alias('chunk_index'))
+    df = df.select('*', parse_final_chunk_index('event').alias('final_chunk_index'))
+    df = df.select('*', parse_payload('event').alias('payload'))
+
+    df.printSchema()
+
+    if True:
+        (df
+         .writeStream
+         .trigger(processingTime='3 seconds')    # limit trigger rate
+         .outputMode('append')
+         .format('console')
+         # .option('truncate', 'false')
+         .start()
+         .awaitTermination()
+         )
 
 
 def test12(spark):

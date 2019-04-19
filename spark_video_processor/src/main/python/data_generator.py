@@ -29,39 +29,47 @@ def chunks(l, n):
         yield l[i:i + n]
 
 
-def data_generator(camera, ssrc, frames_per_sec, max_chunks, max_chunk_data_size, t0_ms):
+def pravega_chunker_v1(payload, max_chunk_size=1024*1024):
+    """Split payload into chunks of 1 MiB or less.
+    When written to Pravega, chunked events have the following 64-bit header.
+      version: value must be 1 (8-bit signed integer)
+      reserved: value must be 0 (3 8-bit signed integers)
+      chunk_index: 0-based chunk index (16-bit signed big endian integer)
+      final_chunk_index: number of chunks minus 1 (16 bit signed big endian integer)
+    """
+    version = 1
+    reserved = 0
+    max_chunk_data_size = max_chunk_size - 4096
+    chunk_list = list(chunks(payload, max_chunk_data_size))
+    final_chunk_index = len(chunk_list) - 1
+    for chunk_index, chunked_payload in enumerate(chunk_list):
+        header = struct.pack('!bxxxhh', version, chunk_index, final_chunk_index)
+        chunked_event = header + chunked_payload
+        yield chunked_event
+
+
+def data_generator(camera, ssrc, frames_per_sec, t0_ms):
     frame_number = 0
     while True:
         timestamp = int(frame_number / (frames_per_sec / 1000.0) + t0_ms)
-        data_size = np.random.randint(1, max_chunks * max_chunk_data_size - 4 + 1)
+        # data_size = np.random.randint(1, max_chunks * max_chunk_size - 4 + 1)
+        data_size = 20
         data = np.random.bytes(data_size)
         # Add CRC32 checksum to allow for error checking.
         chucksum = struct.pack('!I', zlib.crc32(data))
         data = chucksum + data
-        chunk_list = list(chunks(data, max_chunk_data_size))
-        num_chunks = len(chunk_list)
-        if num_chunks > max_chunks:
-            raise Exception('num_chunks exceeded max_chunks')
-        for chunk in range(max_chunks):
-            # To accommodate the reassembly algorithm in Spark, we must write records for all chunks including empty ones.
-            if chunk < num_chunks:
-                chunk_data = chunk_list[chunk]
-            else:
-                chunk_data = b''
-            record = {
-                'timestamp': timestamp,
-                'frame_number': frame_number,
-                'camera': camera,
-                'chunk': chunk,
-                'num_chunks': num_chunks,
-                'ssrc': ssrc,
-                'data': base64.b64encode(chunk_data).decode('utf-8'),
-            }
-            yield record
+        record = {
+            'timestamp': timestamp,
+            'frame_number': frame_number,
+            'camera': camera,
+            'ssrc': ssrc,
+            'data': base64.b64encode(data).decode('utf-8'),
+        }
+        yield record
         frame_number += 1
 
 
-def pravega_request_generator(data_generator, scope, stream):
+def pravega_request_generator(data_generator, scope, stream, max_chunk_size):
     for record in data_generator:
         t = record['timestamp']
         sleep_sec = t/1000.0 - time()
@@ -75,16 +83,23 @@ def pravega_request_generator(data_generator, scope, stream):
             record_to_log['data_len'] = len(record['data'])
             record_to_log['json_len'] = len(data_json)
             logging.info('%d: %s' % (record_to_log['camera'], json.dumps(record_to_log)))
-        request = pravega.pb.WriteEventsRequest(scope=scope, stream=stream, event=data_json.encode('utf-8'))
-        yield request
+        payload = data_json.encode('utf-8')
+        for chunked_event in pravega_chunker_v1(payload, max_chunk_size=max_chunk_size):
+            request = pravega.pb.WriteEventsRequest(
+                scope=scope,
+                stream=stream,
+                use_transaction=True,
+                event=chunked_event)
+            logging.info(request)
+            yield request
 
 
-def single_generator_process(camera, frames_per_sec, max_chunks, max_chunk_data_size, gateway, scope, stream):
+def single_generator_process(camera, frames_per_sec, max_chunk_size, gateway, scope, stream):
     t0_ms = int(time() * 1000)
     ssrc = np.random.randint(0, 2**31)
-    data_iter = data_generator(camera, ssrc, frames_per_sec, max_chunks, max_chunk_data_size, t0_ms)
+    data_iter = data_generator(camera, ssrc, frames_per_sec, t0_ms)
     # data_iter = itertools.islice(data_iter, 10)
-    pravega_request_iter = pravega_request_generator(data_iter, scope, stream)
+    pravega_request_iter = pravega_request_generator(data_iter, scope, stream, max_chunk_size)
     with grpc.insecure_channel(gateway) as pravega_channel:
         pravega_client = pravega.grpc.PravegaGatewayStub(pravega_channel)
         pravega_client.CreateScope(pravega.pb.CreateScopeRequest(scope=scope))
@@ -100,7 +115,7 @@ def main():
         '-g', '--gateway', default='localhost:54672',
         action='store', dest='gateway', help='address:port of Pravega gateway')
     parser.add_argument(
-        '--scope', default='examples4',
+        '--scope', default='examples',
         action='store', dest='scope', help='Pravega scope')
     parser.add_argument(
         '--stream', default='video',
@@ -108,12 +123,12 @@ def main():
     parser.add_argument(
         '--num-cameras', default=1, type=int,
         action='store', dest='num_cameras', help='Number of cameras to simulate')
+    # parser.add_argument(
+    #     '--max-chunks', default=3, type=int,
+    #     action='store', dest='max_chunks', help='Maximum number of chunks per frame')
     parser.add_argument(
-        '--max-chunks', default=3, type=int,
-        action='store', dest='max_chunks', help='Maximum number of chunks per frame')
-    parser.add_argument(
-        '--max-chunk-data-size', default=10, type=int,
-        action='store', dest='max_chunk_data_size', help='Maximum size of data per chunk (bytes)')
+        '--max-chunk-size', default=4096+10, type=int,
+        action='store', dest='max_chunk_size', help='Maximum size of chunk (bytes)')
     parser.add_argument(
         '--fps', default=5.0, type=float,
         action='store', dest='frames_per_sec', help='Number of frames per second per camera')
@@ -127,8 +142,7 @@ def main():
                 args=(
                     camera,
                     options.frames_per_sec,
-                    options.max_chunks,
-                    options.max_chunk_data_size,
+                    options.max_chunk_size,
                     options.gateway,
                     options.scope,
                     options.stream))
