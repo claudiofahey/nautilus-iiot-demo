@@ -188,6 +188,8 @@ public class PravegaGateway {
                         }
                         writer.open();
                     } else {
+                        // Stream-wide parameters in 2nd and subsequent requests can be the same
+                        // as the first request or can be the GRPC default (empty string and 0).
                         if (!(req.getScope().isEmpty() || req.getScope().equals(scope))) {
                             responseObserver.onError(
                                     Status.INVALID_ARGUMENT
@@ -217,6 +219,9 @@ public class PravegaGateway {
                     }
                     try {
                         writer.writeEvent(req.getRoutingKey(), req.getEvent().asReadOnlyByteBuffer());
+                        if (req.getCommit()) {
+                            writer.commit();
+                        }
                     } catch (TxnFailedException e) {
                         responseObserver.onError(Status.ABORTED.asRuntimeException());
                         return;
@@ -244,6 +249,7 @@ public class PravegaGateway {
                 public void onCompleted() {
                     if (writer != null) {
                         try {
+                            writer.commit();
                             writer.close();
                         } catch (TxnFailedException e) {
                             responseObserver.onError(Status.ABORTED.asRuntimeException());

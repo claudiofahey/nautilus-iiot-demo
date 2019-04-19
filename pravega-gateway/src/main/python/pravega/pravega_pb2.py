@@ -19,7 +19,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='',
   syntax='proto3',
   serialized_options=_b('\n\"io.pravega.example.pravega_gatewayP\001'),
-  serialized_pb=_b('\n\x15pravega/pravega.proto\"#\n\x12\x43reateScopeRequest\x12\r\n\x05scope\x18\x01 \x01(\t\"&\n\x13\x43reateScopeResponse\x12\x0f\n\x07\x63reated\x18\x01 \x01(\x08\"4\n\x13\x43reateStreamRequest\x12\r\n\x05scope\x18\x01 \x01(\t\x12\x0e\n\x06stream\x18\x02 \x01(\t\"\'\n\x14\x43reateStreamResponse\x12\x0f\n\x07\x63reated\x18\x01 \x01(\x08\"F\n\x11ReadEventsRequest\x12\r\n\x05scope\x18\x01 \x01(\t\x12\x0e\n\x06stream\x18\x02 \x01(\t\x12\x12\n\ntimeout_ms\x18\x03 \x01(\x03\"e\n\x12ReadEventsResponse\x12\r\n\x05\x65vent\x18\x01 \x01(\x0c\x12\x10\n\x08position\x18\x02 \x01(\t\x12\x15\n\revent_pointer\x18\x03 \x01(\t\x12\x17\n\x0f\x63heckpoint_name\x18\x04 \x01(\t\"p\n\x12WriteEventsRequest\x12\r\n\x05\x65vent\x18\x01 \x01(\x0c\x12\x13\n\x0brouting_key\x18\x02 \x01(\t\x12\r\n\x05scope\x18\x03 \x01(\t\x12\x0e\n\x06stream\x18\x04 \x01(\t\x12\x17\n\x0fuse_transaction\x18\x05 \x01(\x08\"\x15\n\x13WriteEventsResponse2\x84\x02\n\x0ePravegaGateway\x12:\n\x0b\x43reateScope\x12\x13.CreateScopeRequest\x1a\x14.CreateScopeResponse\"\x00\x12=\n\x0c\x43reateStream\x12\x14.CreateStreamRequest\x1a\x15.CreateStreamResponse\"\x00\x12\x39\n\nReadEvents\x12\x12.ReadEventsRequest\x1a\x13.ReadEventsResponse\"\x00\x30\x01\x12<\n\x0bWriteEvents\x12\x13.WriteEventsRequest\x1a\x14.WriteEventsResponse\"\x00(\x01\x42&\n\"io.pravega.example.pravega_gatewayP\x01\x62\x06proto3')
+  serialized_pb=_b('\n\x15pravega/pravega.proto\"#\n\x12\x43reateScopeRequest\x12\r\n\x05scope\x18\x01 \x01(\t\"&\n\x13\x43reateScopeResponse\x12\x0f\n\x07\x63reated\x18\x01 \x01(\x08\"4\n\x13\x43reateStreamRequest\x12\r\n\x05scope\x18\x01 \x01(\t\x12\x0e\n\x06stream\x18\x02 \x01(\t\"\'\n\x14\x43reateStreamResponse\x12\x0f\n\x07\x63reated\x18\x01 \x01(\x08\"F\n\x11ReadEventsRequest\x12\r\n\x05scope\x18\x01 \x01(\t\x12\x0e\n\x06stream\x18\x02 \x01(\t\x12\x12\n\ntimeout_ms\x18\x03 \x01(\x03\"e\n\x12ReadEventsResponse\x12\r\n\x05\x65vent\x18\x01 \x01(\x0c\x12\x10\n\x08position\x18\x02 \x01(\t\x12\x15\n\revent_pointer\x18\x03 \x01(\t\x12\x17\n\x0f\x63heckpoint_name\x18\x04 \x01(\t\"\x80\x01\n\x12WriteEventsRequest\x12\r\n\x05\x65vent\x18\x01 \x01(\x0c\x12\x13\n\x0brouting_key\x18\x02 \x01(\t\x12\r\n\x05scope\x18\x03 \x01(\t\x12\x0e\n\x06stream\x18\x04 \x01(\t\x12\x17\n\x0fuse_transaction\x18\x05 \x01(\x08\x12\x0e\n\x06\x63ommit\x18\x06 \x01(\x08\"\x15\n\x13WriteEventsResponse2\x84\x02\n\x0ePravegaGateway\x12:\n\x0b\x43reateScope\x12\x13.CreateScopeRequest\x1a\x14.CreateScopeResponse\"\x00\x12=\n\x0c\x43reateStream\x12\x14.CreateStreamRequest\x1a\x15.CreateStreamResponse\"\x00\x12\x39\n\nReadEvents\x12\x12.ReadEventsRequest\x1a\x13.ReadEventsResponse\"\x00\x30\x01\x12<\n\x0bWriteEvents\x12\x13.WriteEventsRequest\x1a\x14.WriteEventsResponse\"\x00(\x01\x42&\n\"io.pravega.example.pravega_gatewayP\x01\x62\x06proto3')
 )
 
 
@@ -295,6 +295,13 @@ _WRITEEVENTSREQUEST = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
+    _descriptor.FieldDescriptor(
+      name='commit', full_name='WriteEventsRequest.commit', index=5,
+      number=6, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      serialized_options=None, file=DESCRIPTOR),
   ],
   extensions=[
   ],
@@ -307,8 +314,8 @@ _WRITEEVENTSREQUEST = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=372,
-  serialized_end=484,
+  serialized_start=373,
+  serialized_end=501,
 )
 
 
@@ -331,8 +338,8 @@ _WRITEEVENTSRESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=486,
-  serialized_end=507,
+  serialized_start=503,
+  serialized_end=524,
 )
 
 DESCRIPTOR.message_types_by_name['CreateScopeRequest'] = _CREATESCOPEREQUEST
@@ -410,8 +417,8 @@ _PRAVEGAGATEWAY = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=510,
-  serialized_end=770,
+  serialized_start=527,
+  serialized_end=787,
   methods=[
   _descriptor.MethodDescriptor(
     name='CreateScope',

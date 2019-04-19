@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -e
 
-source activate ./env
+export PATH=$PWD/env/bin:$PATH
 
 python -m grpc_tools.protoc \
 -Isrc/main/proto/ \

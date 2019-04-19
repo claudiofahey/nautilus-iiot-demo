@@ -51,6 +51,26 @@ Enable Annotations (settings -> build, execution, deployment, -> compiler -> ann
 See <https://docs.docker.com/install/linux/docker-ce/ubuntu/>
 and <https://docs.docker.com/compose/install/>.
 
+### Run Pravega
+
+This will run a development instance of Pravega locally.
+Note that the default *standalone* Pravega used for development is likely insufficient for testing video because
+it stores all data in memory and quickly runs out of memory.
+Using the procedure below, all data will be stored in a small HDFS cluster in Docker.
+
+In the command below, replace x.x.x.x with the IP address of a local network interface such as eth0.
+
+```
+cd
+git clone https://github.com/pravega/pravega
+cd pravega
+export HOST_IP=x.x.x.x
+docker-compose up -d
+```
+
+You can view the Pravega logs with `docker-compose logs --follow`.
+You can view the stream files stored on HDFS with `docker-compose exec hdfs hdfs dfs -ls -h -R /`.
+
 ### Run Flink Jobs
 
 - Flink jobs are in the [flinkprocessor](flinkprocessor) directory.

@@ -11,9 +11,6 @@ from multiprocessing import Process
 import json
 import numpy as np
 import base64
-import math
-import os
-import itertools
 import grpc
 import pravega
 import logging
@@ -38,32 +35,32 @@ def pravega_chunker_v1(payload, max_chunk_size=1024*1024):
       final_chunk_index: number of chunks minus 1 (16 bit signed big endian integer)
     """
     version = 1
-    reserved = 0
     max_chunk_data_size = max_chunk_size - 4096
     chunk_list = list(chunks(payload, max_chunk_data_size))
     final_chunk_index = len(chunk_list) - 1
     for chunk_index, chunked_payload in enumerate(chunk_list):
+        is_final_chunk = chunk_index == final_chunk_index
         header = struct.pack('!bxxxhh', version, chunk_index, final_chunk_index)
         chunked_event = header + chunked_payload
-        yield chunked_event
+        yield (chunked_event, chunk_index, is_final_chunk)
 
 
-def data_generator(camera, ssrc, frames_per_sec, t0_ms):
+def data_generator(camera, ssrc, frames_per_sec, avg_data_size, t0_ms):
     frame_number = 0
     while True:
         timestamp = int(frame_number / (frames_per_sec / 1000.0) + t0_ms)
-        # data_size = np.random.randint(1, max_chunks * max_chunk_size - 4 + 1)
-        data_size = 20
+        data_size = np.random.randint(1, avg_data_size * 2 - 4 + 1)
+        # data_size = avg_data_size
         data = np.random.bytes(data_size)
-        # Add CRC32 checksum to allow for error checking.
+        # Add CRC32 checksum to allow for error detection.
         chucksum = struct.pack('!I', zlib.crc32(data))
-        data = chucksum + data
+        checksum_and_data = chucksum + data
         record = {
             'timestamp': timestamp,
             'frame_number': frame_number,
             'camera': camera,
             'ssrc': ssrc,
-            'data': base64.b64encode(data).decode('utf-8'),
+            'data': base64.b64encode(checksum_and_data).decode('utf-8'),
         }
         yield record
         frame_number += 1
@@ -77,28 +74,30 @@ def pravega_request_generator(data_generator, scope, stream, max_chunk_size):
             sleep(sleep_sec)
         record['timestamp'] = (datetime(1970, 1, 1) + timedelta(milliseconds=t)).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + 'Z'
         data_json = json.dumps(record)
+        payload = data_json.encode('utf-8')
+        for (chunked_event, chunk_index, is_final_chunk) in pravega_chunker_v1(payload, max_chunk_size=max_chunk_size):
+            request = pravega.pb.WriteEventsRequest(
+                event=chunked_event,
+                scope=scope,
+                stream=stream,
+                use_transaction=True,
+                commit=is_final_chunk,
+                )
+            # logging.info(request)
+            yield request
         if True:
             record_to_log = record.copy()
             record_to_log['data'] = record_to_log['data'][:10] + '...'
-            record_to_log['data_len'] = len(record['data'])
+            record_to_log['base64_data_len'] = len(record['data'])
             record_to_log['json_len'] = len(data_json)
+            record_to_log['final_chunk_index'] = chunk_index
             logging.info('%d: %s' % (record_to_log['camera'], json.dumps(record_to_log)))
-        payload = data_json.encode('utf-8')
-        for chunked_event in pravega_chunker_v1(payload, max_chunk_size=max_chunk_size):
-            request = pravega.pb.WriteEventsRequest(
-                scope=scope,
-                stream=stream,
-                use_transaction=False,
-                event=chunked_event)
-            logging.info(request)
-            yield request
 
 
-def single_generator_process(camera, frames_per_sec, max_chunk_size, gateway, scope, stream):
+def single_generator_process(camera, frames_per_sec, max_chunk_size, avg_data_size, gateway, scope, stream):
     t0_ms = int(time() * 1000)
     ssrc = np.random.randint(0, 2**31)
-    data_iter = data_generator(camera, ssrc, frames_per_sec, t0_ms)
-    # data_iter = itertools.islice(data_iter, 10)
+    data_iter = data_generator(camera, ssrc, frames_per_sec, avg_data_size, t0_ms)
     pravega_request_iter = pravega_request_generator(data_iter, scope, stream, max_chunk_size)
     with grpc.insecure_channel(gateway) as pravega_channel:
         pravega_client = pravega.grpc.PravegaGatewayStub(pravega_channel)
@@ -123,12 +122,12 @@ def main():
     parser.add_argument(
         '--num-cameras', default=1, type=int,
         action='store', dest='num_cameras', help='Number of cameras to simulate')
-    # parser.add_argument(
-    #     '--max-chunks', default=3, type=int,
-    #     action='store', dest='max_chunks', help='Maximum number of chunks per frame')
     parser.add_argument(
-        '--max-chunk-size', default=4096+10, type=int,
+        '--max-chunk-size', default=1024*1024, type=int,
         action='store', dest='max_chunk_size', help='Maximum size of chunk (bytes)')
+    parser.add_argument(
+        '--avg-data-size', default=50*1024*1024, type=int,
+        action='store', dest='avg_data_size', help='Average size of data (bytes)')
     parser.add_argument(
         '--fps', default=1.0, type=float,
         action='store', dest='frames_per_sec', help='Number of frames per second per camera')
@@ -143,6 +142,7 @@ def main():
                     camera,
                     options.frames_per_sec,
                     options.max_chunk_size,
+                    options.avg_data_size,
                     options.gateway,
                     options.scope,
                     options.stream))

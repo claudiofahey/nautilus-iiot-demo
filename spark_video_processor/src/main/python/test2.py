@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession, Window
-from pyspark.sql.functions import window, collect_list, pandas_udf, PandasUDFType, concat, udf, from_json, decode
+from pyspark.sql.functions import window, collect_list, pandas_udf, PandasUDFType, concat, udf, from_json, decode, length
 from pyspark.sql.types import StructType, StructField, TimestampType, IntegerType, DoubleType, BinaryType, BooleanType
 import os
 import sys
@@ -56,12 +56,14 @@ def test14(spark):
     def is_checksum_correct(checksum, data):
         expected = struct.unpack('!I', checksum)[0]
         calculated = zlib.crc32(data)
-        print('expected=%d, calculated=%d' % (expected, calculated))
+        # print('expected=%d, calculated=%d' % (expected, calculated))
         return expected == calculated
 
     df = df.withColumnRenamed('data', 'checksum_and_data')
     df = df.select('*', parse_checksum('checksum_and_data').alias('checksum'), parse_data('checksum_and_data').alias('data'))
     df = df.select('*', is_checksum_correct('checksum', 'data').alias('is_checksum_correct'))
+    df = df.select('*', length('data'))
+    df = df.drop('raw_event', 'event_string', 'event', 'checksum_and_data', 'data')
 
     df.printSchema()
 
@@ -71,7 +73,7 @@ def test14(spark):
          .trigger(processingTime='3 seconds')    # limit trigger rate
          .outputMode('append')
          .format('console')
-         # .option('truncate', 'false')
+         .option('truncate', 'false')
          .start()
          .awaitTermination()
          )
@@ -244,6 +246,7 @@ def test10(spark):
           .option("controller", controller)
           .option("scope", scope)
           .option("stream", "video")
+          .option("encoding", "chunked_v1")
           .load()
           )
 

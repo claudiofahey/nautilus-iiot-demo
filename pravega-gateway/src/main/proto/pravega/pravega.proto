@@ -58,6 +58,10 @@ message WriteEventsRequest {
   // is completed.
   // Can be set in the first request. For subsequent requests, must be the same value or the default (false).
   bool use_transaction = 5;
+  // If true, the open transaction will be flushed and committed after writing this event.
+  // A new transaction will be opened.
+  // This is ignored if use_transaction is false.
+  bool commit = 6;
 }
 
 message WriteEventsResponse {
