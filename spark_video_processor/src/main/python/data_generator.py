@@ -26,7 +26,7 @@ def chunks(l, n):
         yield l[i:i + n]
 
 
-def pravega_chunker_v1(payload, max_chunk_size=1024*1024):
+def pravega_chunker_v1(payload, max_chunk_size):
     """Split payload into chunks of 1 MiB or less.
     When written to Pravega, chunked events have the following 64-bit header.
       version: value must be 1 (8-bit signed integer)
@@ -45,22 +45,23 @@ def pravega_chunker_v1(payload, max_chunk_size=1024*1024):
         yield (chunked_event, chunk_index, is_final_chunk)
 
 
-def data_generator(camera, ssrc, frames_per_sec, avg_data_size, t0_ms):
+def data_generator(camera, ssrc, frames_per_sec, avg_data_size, include_checksum, t0_ms):
     frame_number = 0
     while True:
         timestamp = int(frame_number / (frames_per_sec / 1000.0) + t0_ms)
         data_size = np.random.randint(1, avg_data_size * 2 - 4 + 1)
         # data_size = avg_data_size
         data = np.random.bytes(data_size)
-        # Add CRC32 checksum to allow for error detection.
-        chucksum = struct.pack('!I', zlib.crc32(data))
-        checksum_and_data = chucksum + data
+        if include_checksum:
+            # Add CRC32 checksum to allow for error detection.
+            chucksum = struct.pack('!I', zlib.crc32(data))
+            data = chucksum + data
         record = {
             'timestamp': timestamp,
             'frame_number': frame_number,
             'camera': camera,
             'ssrc': ssrc,
-            'data': base64.b64encode(checksum_and_data).decode('utf-8'),
+            'data': base64.b64encode(data).decode('utf-8'),
         }
         yield record
         frame_number += 1
@@ -94,10 +95,10 @@ def pravega_request_generator(data_generator, scope, stream, max_chunk_size):
             logging.info('%d: %s' % (record_to_log['camera'], json.dumps(record_to_log)))
 
 
-def single_generator_process(camera, frames_per_sec, max_chunk_size, avg_data_size, gateway, scope, stream):
+def single_generator_process(camera, frames_per_sec, max_chunk_size, avg_data_size, checksum, gateway, scope, stream):
     t0_ms = int(time() * 1000)
     ssrc = np.random.randint(0, 2**31)
-    data_iter = data_generator(camera, ssrc, frames_per_sec, avg_data_size, t0_ms)
+    data_iter = data_generator(camera, ssrc, frames_per_sec, avg_data_size, checksum, t0_ms)
     pravega_request_iter = pravega_request_generator(data_iter, scope, stream, max_chunk_size)
     with grpc.insecure_channel(gateway) as pravega_channel:
         pravega_client = pravega.grpc.PravegaGatewayStub(pravega_channel)
@@ -131,6 +132,9 @@ def main():
     parser.add_argument(
         '--fps', default=1.0, type=float,
         action='store', dest='frames_per_sec', help='Number of frames per second per camera')
+    parser.add_argument(
+        '--checksum', default=False,
+        action='store_true', dest='checksum', help='Prepend the data with a checksum that can be used to detect errors')
     options, unparsed = parser.parse_known_args()
 
     cameras = [i for i in range(options.num_cameras)]
@@ -143,6 +147,7 @@ def main():
                     options.frames_per_sec,
                     options.max_chunk_size,
                     options.avg_data_size,
+                    options.checksum,
                     options.gateway,
                     options.scope,
                     options.stream))
