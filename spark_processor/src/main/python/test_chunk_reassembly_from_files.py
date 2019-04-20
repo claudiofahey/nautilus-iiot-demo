@@ -414,4 +414,6 @@ def test1(spark):
         .rowsBetween(Window.unboundedPreceding, Window.unboundedFollowing)
     df.withColumn('mean_v', mean_udf(df['v']).over(w)).show()
 
-main()
+
+if __name__ == '__main__':
+    main()

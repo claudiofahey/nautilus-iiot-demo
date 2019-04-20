@@ -12,11 +12,11 @@ import json
 import numpy as np
 import base64
 import grpc
-import pravega
 import logging
 import zlib
 import struct
 from datetime import datetime, timedelta
+import pravega
 
 
 def chunks(l, n):

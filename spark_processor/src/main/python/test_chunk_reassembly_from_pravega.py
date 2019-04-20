@@ -307,4 +307,6 @@ def test10(spark):
          .awaitTermination()
          )
 
-main()
+
+if __name__ == '__main__':
+    main()

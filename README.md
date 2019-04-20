@@ -16,7 +16,8 @@ and visualization on streaming Industrial Internet-Of-Things (IOT) data.
 
   See <http://pravega.io> for more information.
 
-- Apache Spark
+- Apache Spark: This is a unified analytics engine for large-scale data processing.
+  It allows writing analytics applications in Java, Scala, Python, R, and SQL.
 
 - Docker: This demo uses Docker and Docker Compose to greatly simplify the deployment of the various
   components on Linux and/or Windows servers, desktops, or even laptops.
@@ -75,23 +76,29 @@ You can view the stream files stored on HDFS with `docker-compose exec hdfs hdfs
 
 See [Pravega Gateway](pravega-gateway/README.md) for more information.
 
-### Build the Python Environment
+### Build the Python Environments
 
 1. Install [Miniconda Python 3.7](https://docs.conda.io/en/latest/miniconda.html) or
    [Anaconda Python 3.7](https://www.anaconda.com/distribution/#download-section).
 
-2. Create Conda environment.
+2. Create Conda environments.
     ```
+    cd streaming_data_generator
+    ./create_conda_env.sh
+    cd ../spark_processor
     ./create_conda_env.sh
     ```
 
 ### Run the Data Generator
 
-This will run a Python application that generates random data and writes it to Pravega
+This will run Python applications that generate synthetic data and writes it to Pravega
 via the Pravega Gateway.
 
 ```
-./data_generator.sh
+cd streaming_data_generator
+./sensor_data_generator.sh
+./sensor_data_generator.sh --stream sensors2
+./video_data_generator.sh
 ```
 
 ### Installing the Pravega Spark Connectors
@@ -100,12 +107,13 @@ The Pravega Spark Connector is not currently available in standard repositories.
 To install it, follow the procedure at
 [Spark Connectors](https://github.com/pravega/spark-connectors/tree/issue-11-chunked-reader#build-and-install-the-spark-connector).
 
-### Run the Video Processor
+### Run the Sensor and Video Processors
 
-This will run a Python Spark application that reads the random data. It can be modified to perform computation on the data.
+This will run a Python Spark application that reads the generated data. 
 
 ```
-./data_generator.sh
+cd spark_processor
+./test_sensor_processor.sh
 ```
 
 # References

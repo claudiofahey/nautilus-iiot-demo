@@ -11,4 +11,3 @@
 rootProject.name = "nautilus-iiot-demo"
 
 include "pravega-gateway"
-include "flinkprocessor"
