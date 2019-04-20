@@ -19,6 +19,24 @@ def main():
     test2(spark)
 
 
+def test3(spark):
+    """
+    Test of Spark SQL batch mode. This is not working in Pravega yet.
+    """
+    controller = os.getenv('PRAVEGA_CONTROLLER', 'tcp://127.0.0.1:9090')
+    scope = os.getenv('PRAVEGA_SCOPE', 'examples')
+    df = (spark
+          .read
+          .format("pravega")
+          .option("controller", controller)
+          .option("scope", scope)
+          .option("stream", "video")
+          .option("encoding", "chunked_v1")
+          .load()
+          )
+    df.show()
+
+
 def test2(spark):
     """
     This demonstrates reading large images from Pravega and detecting defects.
@@ -59,7 +77,7 @@ def test2(spark):
             rgb = cv2.imdecode(numpy_array, -1)
             # Perform a computation on the image to determine the probability of a defect.
             # For now, we just calculate the mean pixel value.
-            # We can any Python library, including NumPy and TensorFlow.
+            # We can use any Python library, including NumPy and TensorFlow.
             p = rgb.mean() / 255.0
             return p
         return s.apply(f)
@@ -87,6 +105,7 @@ def test1(spark):
     This demonstrates reading large images from Pravega and detecting defects.
     The data field contains a base-64 encoded PNG image file.
     It uses chunked encoding to support events of 2 GiB.
+    This runs out of memory because the non-Pandas runner uses fixed batches of 100.
     """
     schema='timestamp timestamp, frame_number int, camera int, ssrc int, data binary'
 
