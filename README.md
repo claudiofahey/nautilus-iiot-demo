@@ -76,6 +76,12 @@ You can view the stream files stored on HDFS with `docker-compose exec hdfs hdfs
 
 See [Pravega Gateway](pravega-gateway/README.md) for more information.
 
+### Installing the Pravega Spark Connectors
+
+The Pravega Spark Connector is not currently available in standard repositories.
+To install it, follow the procedure at
+[Spark Connectors](https://github.com/pravega/spark-connectors/tree/issue-11-chunked-reader#build-and-install-the-spark-connector).
+
 ### Build the Python Environments
 
 1. Install [Miniconda Python 3.7](https://docs.conda.io/en/latest/miniconda.html) or
@@ -101,19 +107,13 @@ cd streaming_data_generator
 ./video_data_generator.sh
 ```
 
-### Installing the Pravega Spark Connectors
-
-The Pravega Spark Connector is not currently available in standard repositories.
-To install it, follow the procedure at
-[Spark Connectors](https://github.com/pravega/spark-connectors/tree/issue-11-chunked-reader#build-and-install-the-spark-connector).
-
-### Run the Sensor and Video Processors
+### Run the Video and Sensor Processors
 
 This will run a Python Spark application that reads the generated data. 
 
 ```
 cd spark_processor
-./test_sensor_processor.sh
+./test_video_and_sensor_processor.sh
 ```
 
 # References

@@ -10,11 +10,13 @@ import configargparse as argparse
 from multiprocessing import Process
 import json
 import numpy as np
+import cv2
 import base64
 import grpc
 import logging
 import zlib
 import struct
+import math
 from datetime import datetime, timedelta
 import pravega
 
@@ -51,7 +53,12 @@ def data_generator(camera, ssrc, frames_per_sec, avg_data_size, include_checksum
         timestamp = int(frame_number / (frames_per_sec / 1000.0) + t0_ms)
         data_size = np.random.randint(1, avg_data_size * 2 - 4 + 1)
         # data_size = avg_data_size
-        data = np.random.bytes(data_size)
+        image_width = math.ceil(math.sqrt(data_size / 3))
+        rgb = np.random.randint(255, size=(image_width, image_width, 3), dtype=np.uint8)
+        _, data = cv2.imencode('.png', rgb, [cv2.IMWRITE_PNG_COMPRESSION, 0])
+        if frame_number == 0:
+            data.tofile('/tmp/camera%d-%d.png' % (camera, frame_number))
+        # data = np.random.bytes(data_size)
         if include_checksum:
             # Add CRC32 checksum to allow for error detection.
             chucksum = struct.pack('!I', zlib.crc32(data))
@@ -127,7 +134,7 @@ def main():
         '--max-chunk-size', default=1024*1024, type=int,
         action='store', dest='max_chunk_size', help='Maximum size of chunk (bytes)')
     parser.add_argument(
-        '--avg-data-size', default=10, type=int,
+        '--avg-data-size', default=50*1024*1024, type=int,
         action='store', dest='avg_data_size', help='Average size of data (bytes)')
     parser.add_argument(
         '--fps', default=1.0, type=float,

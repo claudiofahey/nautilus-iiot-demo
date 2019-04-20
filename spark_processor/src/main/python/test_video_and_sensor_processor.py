@@ -3,8 +3,8 @@ from pyspark.sql.functions import window, collect_list, pandas_udf, PandasUDFTyp
 from pyspark.sql.types import StructType, StructField, TimestampType, IntegerType, DoubleType, BinaryType, BooleanType
 import os
 import sys
-import zlib
-import struct
+import cv2
+import numpy as np
 
 
 def main():
@@ -21,6 +21,9 @@ def main():
 
 def test1(spark):
     """
+    This demonstrates reading large images from Pravega and detecting defects.
+    The data field contains a base-64 encoded PNG image file.
+    It uses chunked encoding to support events of 2 GiB.
     """
     schema='timestamp timestamp, frame_number int, camera int, ssrc int, data binary'
 
@@ -38,11 +41,25 @@ def test1(spark):
 
     df = df.withColumnRenamed('event', 'raw_event')
     df = df.select('*', decode('raw_event', 'UTF-8').alias('event_string'))
-    df = df.select('*', from_json('event_string', schema=schema, options=dict(mode='FAILFAST')).alias('event'))
+    df = df.select('*', from_json('event_string', schema=schema).alias('event'))
     df = df.select('*', 'event.*')
     df = df.select('*', length('data'))
-    df = df.drop('raw_event', 'event_string', 'event', 'data')
     df = df.withWatermark('timestamp', '60 second')
+
+    @udf(returnType=DoubleType())
+    def defect_probability(data):
+        """Calculate the probability of a defect."""
+        # Decode the image.
+        rgb = cv2.imdecode(np.array(data), -1)
+        # Perform a computation on the image to determine the probability of a defect.
+        # For now, we just calculate the mean pixel value.
+        # We can any Python library, including NumPy and TensorFlow.
+        p = rgb.mean() / 255.0
+        return float(p)
+
+    df = df.select('*', defect_probability('data').alias('defect_probability'))
+
+    df = df.drop('raw_event', 'event_string', 'event', 'data')
 
     df.printSchema()
 
