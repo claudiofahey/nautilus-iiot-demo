@@ -60,6 +60,8 @@ In the command below, replace x.x.x.x with the IP address of a local network int
 cd
 git clone https://github.com/pravega/pravega
 cd pravega
+git checkout r0.4
+cd docker/compose
 export HOST_IP=x.x.x.x
 docker-compose up -d
 ```
@@ -94,6 +96,23 @@ To install it, follow the procedure at
     cd ../spark_processor
     ./create_conda_env.sh
     ```
+
+### (Optional) Install Apache Spark
+
+This will install a development instance of Spark locally.
+
+Download https://www.apache.org/dyn/closer.lua/spark/spark-2.4.0/spark-2.4.0-bin-hadoop2.7.tgz.
+
+```
+mkdir -p ~/spark
+cd ~/spark
+tar -xzvf ~/Downloads/spark-2.4.0-bin-hadoop2.7.tgz
+ln -s spark-2.4.0-bin-hadoop2.7 current
+export PATH="$HOME/spark/current/bin:$PATH"
+~/spark/current/sbin/start-all.sh
+```
+
+Confirm that you can browse to the Spark Master UI at http://localhost:8080/.
 
 ### Run the Data Generator
 
