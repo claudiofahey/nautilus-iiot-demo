@@ -95,6 +95,7 @@ def test2(spark):
          .outputMode('append')
          .format('console')
          .option('truncate', 'false')
+         .option('checkpointLocation', '/tmp/spark_checkpoints_test_video_and_sensor_processor')
          .start()
          .awaitTermination()
          )
