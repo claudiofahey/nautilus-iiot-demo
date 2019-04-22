@@ -14,7 +14,7 @@ def main():
              )
     spark.conf.set('spark.sql.execution.arrow.enabled', 'true')
     spark.conf.set('spark.sql.shuffle.partitions', '1')
-    test2(spark)
+    test1(spark)
 
 
 def test2(spark):

@@ -34,6 +34,7 @@ public class PravegaGateway {
                 .build()
                 .start();
         logger.info("Server started, listening on " + port);
+        logger.info("Pravega controller is " + Parameters.getControllerURI());
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {

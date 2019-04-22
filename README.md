@@ -47,7 +47,7 @@ Enable Annotations (settings -> build, execution, deployment, -> compiler -> ann
 See <https://docs.docker.com/install/linux/docker-ce/ubuntu/>
 and <https://docs.docker.com/compose/install/>.
 
-### Run Pravega
+### Run Pravega Locally
 
 This will run a development instance of Pravega locally.
 Note that the default *standalone* Pravega used for development is likely insufficient for testing video because
@@ -70,9 +70,29 @@ You can view the Pravega logs with `docker-compose logs --follow`.
 
 You can view the stream files stored on HDFS with `docker-compose exec hdfs hdfs dfs -ls -h -R /`.
 
+### Use Pravega on Nautilus
+
+Accessing Pravega on Nautilus requires authorization provided by a credentials jar file.
+Acquire the file `pravega-keycloak-credentials-shadow.jar`.
+Install it in your local Maven repository with the following steps.
+
+```
+sudo apt-get install maven
+mvn install:install-file \
+-Dfile=~/pravega-keycloak-credentials-shadow.jar \
+-DgroupId=io.pravega -DartifactId=pravega-keycloak-credentials \
+-Dversion=0.4.0-2030.d99411b-0.0.1-020.26736d2 -Dpackaging=jar
+```
+
+Then edit the file `gradle.properties` to include the following line.
+```
+includePravegaCredentials=true
+```
+
 ### Run the Pravega Gateway
 
 ```
+export PRAVEGA_CONTROLLER=tcp://nautilus-pravega-controller.nautilus-pravega.svc.cluster.local:9090
 ./gradlew pravega-gateway:run
 ```
 

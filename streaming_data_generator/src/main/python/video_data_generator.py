@@ -134,7 +134,7 @@ def main():
         '--max-chunk-size', default=1024*1024, type=int,
         action='store', dest='max_chunk_size', help='Maximum size of chunk (bytes)')
     parser.add_argument(
-        '--avg-data-size', default=50*1024*1024, type=int,
+        '--avg-data-size', default=10*1024*1024, type=int,
         action='store', dest='avg_data_size', help='Average size of data (bytes)')
     parser.add_argument(
         '--fps', default=1.0, type=float,

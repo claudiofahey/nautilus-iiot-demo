@@ -14,6 +14,7 @@ Using a GRPC gateway is better than a REST gateway for the following reasons:
 # Run Gateway
 
 ```
+export PRAVEGA_CONTROLLER=tcp://localhost:9090
 ../gradlew run
 ```
 
