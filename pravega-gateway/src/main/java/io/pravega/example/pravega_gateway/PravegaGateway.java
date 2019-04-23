@@ -5,6 +5,7 @@ import io.grpc.Context;
 import io.grpc.Server;
 import io.grpc.ServerBuilder;
 import io.grpc.Status;
+import io.grpc.netty.NettyServerBuilder;
 import io.grpc.stub.StreamObserver;
 import io.pravega.client.ClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
@@ -16,6 +17,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -29,7 +31,9 @@ public class PravegaGateway {
 
     private void start() throws IOException {
         int port = Parameters.getListenPort();
-        server = ServerBuilder.forPort(port)
+        server = NettyServerBuilder.forPort(port)
+                .permitKeepAliveTime(1, TimeUnit.SECONDS)
+                .permitKeepAliveWithoutCalls(true)
                 .addService(new PravegaServerImpl())
                 .build()
                 .start();

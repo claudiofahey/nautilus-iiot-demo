@@ -23,7 +23,38 @@ and visualization on streaming Industrial Internet-Of-Things (IOT) data.
   components on Linux and/or Windows servers, desktops, or even laptops.
   For more information, see <https://en.wikipedia.org/wiki/Docker_(software)>.
 
-## Building and Running the Demo
+## Building and Running the Demo in Nautilus SDK Desktop
+
+Use this section to run this in Nautilus SDK Desktop in Kubernetes.
+
+### Download this Repository
+
+```
+cd
+git clone https://github.com/claudiofahey/nautilus-iiot-demo
+cd nautilus-iiot-demo
+```
+
+### Install the Pravega Credentials JAR File
+
+Accessing Pravega on Nautilus requires authorization provided by a credentials jar file.
+This file is available in your home directory.
+Install it in your local Maven repository with the following steps.
+
+```
+sudo apt-get install maven
+mvn install:install-file \
+-Dfile=$HOME/pravega-keycloak-credentials-shadow.jar \
+-DgroupId=io.pravega -DartifactId=pravega-keycloak-credentials \
+-Dversion=0.4.0-2030.d99411b-0.0.1-020.26736d2 -Dpackaging=jar
+```
+
+Then edit the file `gradle.properties` to include the following line.
+```
+includePravegaCredentials=true
+```
+
+## Building and Running the Demo without Nautilus
 
 ### Install Operating System
 
@@ -69,25 +100,6 @@ docker-compose up -d
 You can view the Pravega logs with `docker-compose logs --follow`.
 
 You can view the stream files stored on HDFS with `docker-compose exec hdfs hdfs dfs -ls -h -R /`.
-
-### Use Pravega on Nautilus
-
-Accessing Pravega on Nautilus requires authorization provided by a credentials jar file.
-Acquire the file `pravega-keycloak-credentials-shadow.jar`.
-Install it in your local Maven repository with the following steps.
-
-```
-sudo apt-get install maven
-mvn install:install-file \
--Dfile=~/pravega-keycloak-credentials-shadow.jar \
--DgroupId=io.pravega -DartifactId=pravega-keycloak-credentials \
--Dversion=0.4.0-2030.d99411b-0.0.1-020.26736d2 -Dpackaging=jar
-```
-
-Then edit the file `gradle.properties` to include the following line.
-```
-includePravegaCredentials=true
-```
 
 ### Run the Pravega Gateway
 
