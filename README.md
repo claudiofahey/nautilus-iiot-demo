@@ -23,9 +23,12 @@ and visualization on streaming Industrial Internet-Of-Things (IOT) data.
   components on Linux and/or Windows servers, desktops, or even laptops.
   For more information, see <https://en.wikipedia.org/wiki/Docker_(software)>.
 
-## Building and Running the Demo in Nautilus SDK Desktop
+## Building and Running the Demo
 
-Use this section to run this in Nautilus SDK Desktop in Kubernetes.
+In the steps below, sections noted with **(Nautilus SDK Desktop)** should only be performed
+in a Nautilus SDK Desktop in a Kubernetes deployment of Nautilus.
+Sections noted with **(Local)** should only be performed in a local workstation deployment
+of Pravega.
 
 ### Download this Repository
 
@@ -35,50 +38,29 @@ git clone https://github.com/claudiofahey/nautilus-iiot-demo
 cd nautilus-iiot-demo
 ```
 
-### Install the Pravega Credentials JAR File
-
-Accessing Pravega on Nautilus requires authorization provided by a credentials jar file.
-This file is available in your home directory.
-Install it in your local Maven repository with the following steps.
-
-```
-sudo apt-get install maven
-mvn install:install-file \
--Dfile=$HOME/pravega-keycloak-credentials-shadow.jar \
--DgroupId=io.pravega -DartifactId=pravega-keycloak-credentials \
--Dversion=0.4.0-2030.d99411b-0.0.1-020.26736d2 -Dpackaging=jar
-```
-
-Then edit the file `gradle.properties` to include the following line.
-```
-includePravegaCredentials=true
-```
-
-## Building and Running the Demo without Nautilus
-
-### Install Operating System
+### (Local) Install Operating System
 
 Install Ubuntu 16.04 LTS. Other operating systems can also be used but the commands below have only been tested
 on this version.
 
-### Install Java 8
+### (Local) Install Java 8
 
 ```
 apt-get install openjdk-8-jdk
 ```
 
-### (Optional) Install IntelliJ
+### (Local, Optional) Install IntelliJ
 
 Install from <https://www.jetbrains.com/idea>.
-Enable the Lombok plugin. 
+Enable the Lombok plugin.
 Enable Annotations (settings -> build, execution, deployment, -> compiler -> annotation processors).
 
-### Install Docker and Docker Compose
+### (Local) Install Docker and Docker Compose
 
 See <https://docs.docker.com/install/linux/docker-ce/ubuntu/>
 and <https://docs.docker.com/compose/install/>.
 
-### Run Pravega Locally
+### (Local) Run Pravega
 
 This will run a development instance of Pravega locally.
 Note that the default *standalone* Pravega used for development is likely insufficient for testing video because
@@ -101,39 +83,53 @@ You can view the Pravega logs with `docker-compose logs --follow`.
 
 You can view the stream files stored on HDFS with `docker-compose exec hdfs hdfs dfs -ls -h -R /`.
 
-### Run the Pravega Gateway
+### (Nautilus SDK Desktop) Install the Pravega Credentials JAR File
+
+Accessing Pravega on Nautilus requires authorization provided by a credentials jar file.
+This file is available in your home directory.
+Install it in your local Maven repository with the following steps.
 
 ```
-export PRAVEGA_CONTROLLER=tcp://nautilus-pravega-controller.nautilus-pravega.svc.cluster.local:9090
-./gradlew pravega-gateway:run
+sudo apt-get install maven
+mvn install:install-file \
+-Dfile=$HOME/pravega-keycloak-credentials-shadow.jar \
+-DgroupId=io.pravega -DartifactId=pravega-keycloak-credentials \
+-Dversion=0.4.0-2030.d99411b-0.0.1-020.26736d2 -Dpackaging=jar
 ```
 
-See [Pravega Gateway](pravega-gateway/README.md) for more information.
+Then edit the file `gradle.properties` to include the following line.
+
+```
+includePravegaCredentials=true
+```
 
 ### Installing the Pravega Spark Connectors
 
 The Pravega Spark Connector is not currently available in standard repositories.
 To install it, follow the procedure at
-[Spark Connectors](https://github.com/pravega/spark-connectors/tree/issue-11-chunked-reader#build-and-install-the-spark-connector).
+[Spark Connectors](https://github.com/pravega/spark-connectors).
 
 ### Build the Python Environments
 
-1. Install [Miniconda Python 3.7](https://docs.conda.io/en/latest/miniconda.html) or
-   [Anaconda Python 3.7](https://www.anaconda.com/distribution/#download-section).
+1. Install [Miniconda Python 3.7](https://docs.conda.io/en/latest/miniconda.html).
+   ```
+   bash Miniconda3-latest-Linux-x86_64.sh
+   ```
+   To make the changes take effect, close and then re-open your Terminal window.
 
 2. Create Conda environments.
     ```
-    cd streaming_data_generator
-    ./create_conda_env.sh
-    cd ../spark_processor
+    cd streaming_data_generator && \
+    ./create_conda_env.sh && \
+    cd ../spark_processor && \
     ./create_conda_env.sh
     ```
 
-### (Optional) Install Apache Spark
+### Install Apache Spark
 
 This will install a development instance of Spark locally.
 
-Download https://www.apache.org/dyn/closer.lua/spark/spark-2.4.0/spark-2.4.0-bin-hadoop2.7.tgz.
+Download [Apache Spark](https://www.apache.org/dyn/closer.lua/spark/spark-2.4.0/spark-2.4.0-bin-hadoop2.7.tgz).
 
 ```
 mkdir -p ~/spark
@@ -141,10 +137,34 @@ cd ~/spark
 tar -xzvf ~/Downloads/spark-2.4.0-bin-hadoop2.7.tgz
 ln -s spark-2.4.0-bin-hadoop2.7 current
 export PATH="$HOME/spark/current/bin:$PATH"
-~/spark/current/sbin/start-all.sh
+spark-submit --version
+```
+
+#### (Local, Optional) Start Spark Services
+
+By default, the Spark applications will use an in-process Spark cluster.
+You can also start a Spark cluster using the following command.
+
+```
+`~/spark/current/sbin/start-all.sh
 ```
 
 Confirm that you can browse to the Spark Master UI at http://localhost:8080/.
+
+### Run the Pravega Gateway
+
+(Nautilus SDK Desktop) Set the Pravega controller in Nautilus.
+Skip this command if you have a local Pravega installation.
+```
+export PRAVEGA_CONTROLLER=tcp://nautilus-pravega-controller.nautilus-pravega.svc.cluster.local:9090
+```
+
+Run the Pravega Gateway.
+```
+./gradlew pravega-gateway:run
+```
+
+See [Pravega Gateway](pravega-gateway/README.md) for more information.
 
 ### Run the Data Generator
 
@@ -166,6 +186,10 @@ This will run a Python Spark application that reads the generated data.
 cd spark_processor
 ./test_video_and_sensor_processor.sh
 ```
+
+Note that Spark checkpoints are stored in `/tmp/spark_checkpoints*`. These files are used to restart
+failed jobs from the last successful checkpoint. If you change the Pravega stream or make significant
+changes to the job, you should delete these files to prevent Spark from trying to use the checkpoint.
 
 # References
 

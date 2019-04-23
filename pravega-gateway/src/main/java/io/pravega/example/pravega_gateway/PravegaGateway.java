@@ -125,7 +125,7 @@ public class PravegaGateway {
                             ReadEventsResponse response = ReadEventsResponse.newBuilder()
                                     .setCheckpointName(event.getCheckpointName())
                                     .build();
-                            logger.info("readEvents: response=" + response.toString());
+                            logger.fine("readEvents: response=" + response.toString());
                             responseObserver.onNext(response);
                         } else if (event.getEvent() != null) {
                             ReadEventsResponse response = ReadEventsResponse.newBuilder()
@@ -133,7 +133,7 @@ public class PravegaGateway {
                                     .setPosition(event.getPosition().toString())
                                     .setEventPointer(event.getEventPointer().toString())
                                     .build();
-                            logger.info("readEvents: response=" + response.toString());
+                            logger.fine("readEvents: response=" + response.toString());
                             responseObserver.onNext(response);
                         } else {
                             if (haveEndStreamCut) {
@@ -175,7 +175,7 @@ public class PravegaGateway {
 
                 @Override
                 public void onNext(WriteEventsRequest req) {
-                    logger.info("writeEvents: req=" + req.toString());
+                    logger.fine("writeEvents: req=" + req.toString());
                     if (writer == null) {
                         final URI controllerURI = Parameters.getControllerURI();
                         scope = req.getScope();
@@ -268,7 +268,7 @@ public class PravegaGateway {
                     }
                     WriteEventsResponse response = WriteEventsResponse.newBuilder()
                             .build();
-                    logger.info("writeEvents: response=" + response.toString());
+                    logger.fine("writeEvents: response=" + response.toString());
                     responseObserver.onNext(response);
                     responseObserver.onCompleted();
                 }
