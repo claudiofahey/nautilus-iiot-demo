@@ -68,10 +68,21 @@ def data_generator(camera, ssrc, frames_per_sec, avg_data_size, include_checksum
             'frame_number': frame_number,
             'camera': camera,
             'ssrc': ssrc,
-            'data': base64.b64encode(data).decode('utf-8'),
+            'data': data,
         }
         yield record
         frame_number += 1
+
+
+def encode_record(record: dict) -> bytes:
+    """Encode the record
+    JSON is universally compatible but require images to be base64 encoded.
+    For optimal performance, other encodings should be used such as Avro or Protobuf.
+    """
+    r = record.copy()
+    r['data'] = base64.b64encode(record['data']).decode('utf-8')
+    encoded = json.dumps(r).encode('utf-8')
+    return encoded
 
 
 def pravega_request_generator(data_generator, scope, stream, max_chunk_size):
@@ -81,8 +92,7 @@ def pravega_request_generator(data_generator, scope, stream, max_chunk_size):
         if sleep_sec > 0.0:
             sleep(sleep_sec)
         record['timestamp'] = (datetime(1970, 1, 1) + timedelta(milliseconds=t)).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + 'Z'
-        data_json = json.dumps(record)
-        payload = data_json.encode('utf-8')
+        payload = encode_record(record)
         for (chunked_event, chunk_index, is_final_chunk) in pravega_chunker_v1(payload, max_chunk_size=max_chunk_size):
             request = pravega.pb.WriteEventsRequest(
                 event=chunked_event,
@@ -95,9 +105,10 @@ def pravega_request_generator(data_generator, scope, stream, max_chunk_size):
             yield request
         if True:
             record_to_log = record.copy()
-            record_to_log['data'] = record_to_log['data'][:10] + '...'
-            record_to_log['base64_data_len'] = len(record['data'])
-            record_to_log['json_len'] = len(data_json)
+            # record_to_log['data'] = str(record_to_log['data'][:10]) + '...'
+            del record_to_log['data']
+            record_to_log['data_len'] = len(record['data'])
+            record_to_log['payload_len'] = len(payload)
             record_to_log['final_chunk_index'] = chunk_index
             logging.info('%d: %s' % (record_to_log['camera'], json.dumps(record_to_log)))
 

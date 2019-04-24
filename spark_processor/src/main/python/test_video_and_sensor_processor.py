@@ -21,7 +21,7 @@ def main():
 
 def test3(spark):
     """
-    Test of Spark SQL batch mode. This is not working in Pravega yet.
+    Test of Spark SQL batch mode.
     """
     controller = os.getenv('PRAVEGA_CONTROLLER', 'tcp://127.0.0.1:9090')
     scope = os.getenv('PRAVEGA_SCOPE', 'examples')
