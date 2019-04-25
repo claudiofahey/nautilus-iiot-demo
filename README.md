@@ -201,7 +201,7 @@ If your network requires non-standard TLS certificates to be trusted during the 
 place them in the ca-certificates directory.
 
 ```
-export DOCKER_REPOSITORY=hop-claudio-minikube-1.solarch.lab.emc.com:31001/nautilus-iiot-demo
+export DOCKER_REPOSITORY=your_repo_host:your_repo_port/nautilus-iiot-demo
 export IMAGE_TAG=0.3.0
 scripts/build-k8s-components.sh
 scripts/deploy-k8s-components.sh
