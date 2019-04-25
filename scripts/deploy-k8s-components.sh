@@ -12,3 +12,10 @@ helm install \
     charts/pravega-gateway \
     --set image.repository=${DOCKER_REPOSITORY}/pravega-gateway \
     --set image.tag=${IMAGE_TAG}
+
+helm install \
+    --name streaming-data-generator \
+    --namespace examples \
+    charts/streaming_data_generator \
+    --set image.repository=${DOCKER_REPOSITORY}/streaming_data_generator \
+    --set image.tag=${IMAGE_TAG}

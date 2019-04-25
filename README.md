@@ -202,6 +202,7 @@ place them in the ca-certificates directory.
 
 ```
 export DOCKER_REPOSITORY=hop-claudio-minikube-1.solarch.lab.emc.com:31001/nautilus-iiot-demo
+export IMAGE_TAG=0.3.0
 scripts/build-k8s-components.sh
 scripts/deploy-k8s-components.sh
 ```
