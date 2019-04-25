@@ -9,13 +9,13 @@ ROOT_DIR=$(dirname $0)/..
 helm install \
     --name pravega-gateway \
     --namespace examples \
-    charts/pravega-gateway \
+    ${ROOT_DIR}/charts/pravega-gateway \
     --set image.repository=${DOCKER_REPOSITORY}/pravega-gateway \
     --set image.tag=${IMAGE_TAG}
 
 helm install \
     --name streaming-data-generator \
     --namespace examples \
-    charts/streaming_data_generator \
+    ${ROOT_DIR}/charts/streaming_data_generator \
     --set image.repository=${DOCKER_REPOSITORY}/streaming_data_generator \
     --set image.tag=${IMAGE_TAG}

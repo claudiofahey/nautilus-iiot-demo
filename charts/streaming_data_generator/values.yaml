@@ -6,4 +6,4 @@ generator:
   gateway: "pravega-gateway.examples.svc.cluster.local:80"
 
 video_generator:
-  fps: 0.2
+  fps: 0.02

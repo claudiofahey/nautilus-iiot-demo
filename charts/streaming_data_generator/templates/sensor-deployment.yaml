@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sensor-data-generator
+  labels:
+    app: nautilus-iiot-demo
+    component: sensor-data-generator
+    release: {{ .Release.Name }}
+spec:
+  selector:
+    matchLabels:
+      app: nautilus-iiot-demo
+      component: sensor-data-generator
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: nautilus-iiot-demo
+        component: sensor-data-generator
+        release: {{ .Release.Name }}
+    spec:
+      serviceAccount: {{ .Release.Namespace }}-pravega
+      containers:
+        - name: main
+          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          imagePullPolicy: Always
+          command: ["sensor_data_generator.py"]
+          env:
+            - name: GENERATOR_GATEWAY
+              value: "{{ .Values.generator.gateway }}"
