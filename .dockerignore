@@ -5,5 +5,5 @@ gradle
 charts
 pravega-gateway/build
 pravega-gateway/env
-spark_processor
+spark_processor/env
 streaming_data_generator/env

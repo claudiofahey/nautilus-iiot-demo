@@ -7,8 +7,8 @@ RUN conda create -y -n env -c conda-forge \
       grpcio \
       grpcio-tools \
       opencv \
-      python=3.6 && \
-    echo "source activate env" > ~/.bashrc
+      python=3.6 \
+    && echo "source activate env" > ~/.bashrc
 
 RUN apt-get update \
     && apt-get install -y \

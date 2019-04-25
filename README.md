@@ -129,13 +129,13 @@ To install it, follow the procedure at
 
 This will install a development instance of Spark locally.
 
-Download [Apache Spark](https://www.apache.org/dyn/closer.lua/spark/spark-2.4.0/spark-2.4.0-bin-hadoop2.7.tgz).
+Download [Apache Spark](https://www.apache.org/dyn/closer.lua/spark/spark-2.4.1/spark-2.4.1-bin-hadoop2.7.tgz).
 
 ```
 mkdir -p ~/spark
 cd ~/spark
-tar -xzvf ~/Downloads/spark-2.4.0-bin-hadoop2.7.tgz
-ln -s spark-2.4.0-bin-hadoop2.7 current
+tar -xzvf ~/Downloads/spark-2.4.1-bin-hadoop2.7.tgz
+ln -s spark-2.4.1-bin-hadoop2.7 current
 export PATH="$HOME/spark/current/bin:$PATH"
 spark-submit --version
 ```
@@ -206,6 +206,18 @@ export IMAGE_TAG=0.3.0
 scripts/build-k8s-components.sh
 scripts/deploy-k8s-components.sh
 ```
+
+### Deploy Spark Processor to Kubernetes
+
+```
+export DOCKER_REPOSITORY=your_repo_host:your_repo_port/nautilus-iiot-demo
+export IMAGE_TAG=0.3.0
+spark_processor/build-k8s.sh
+kubectl apply -f spark_processor/spark-service-account.yaml -n examples
+spark_processor/submit-k8s.sh test_sensor_processor
+spark_processor/submit-k8s.sh test_video_and_sensor_processor
+```
+
 
 # References
 

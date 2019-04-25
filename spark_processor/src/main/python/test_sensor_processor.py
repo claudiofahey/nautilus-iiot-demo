@@ -14,7 +14,48 @@ def main():
              )
     spark.conf.set('spark.sql.execution.arrow.enabled', 'true')
     spark.conf.set('spark.sql.shuffle.partitions', '1')
-    test1(spark)
+    test(spark)
+
+
+def test(spark):
+    """
+    This demonstrates reading JSON events from Pravega.
+    """
+    schema='timestamp timestamp, event_type string, device_id string, temp_celsius double'
+
+    controller = os.getenv('PRAVEGA_CONTROLLER', 'tcp://127.0.0.1:9090')
+    scope = os.getenv('PRAVEGA_SCOPE', 'examples')
+    checkpoint_location = os.getenv('CHECKPOINT_LOCATION', '/tmp/spark_checkpoints_test_sensor_processor')
+
+    df = (spark
+          .readStream
+          .format("pravega")
+          .option("controller", controller)
+          .option("scope", scope)
+          .option("stream", "sensors")
+          .load()
+          )
+
+    df = df.withColumnRenamed('event', 'raw_event')
+    df = df.select('*', decode('raw_event', 'UTF-8').alias('event_string'))
+    df = df.select('*', from_json('event_string', schema=schema).alias('event'))
+    df = df.select('*', 'event.*')
+    df = df.drop('raw_event', 'event_string', 'event')
+    df = df.withWatermark('timestamp', '60 second')
+
+    df.printSchema()
+
+    if True:
+        (df
+         .writeStream
+         .trigger(processingTime='3 seconds')    # limit trigger rate
+         .outputMode('append')
+         .format('console')
+         .option('truncate', 'false')
+         .option('checkpointLocation', checkpoint_location)
+         .start()
+         .awaitTermination()
+         )
 
 
 def test2(spark):
@@ -79,44 +120,6 @@ def test2(spark):
          .outputMode('append')
          .format('console')
          .option('truncate', 'false')
-         .start()
-         .awaitTermination()
-         )
-
-def test1(spark):
-    """
-    This demonstrates reading JSON events from Pravega.
-    """
-    schema='timestamp timestamp, event_type string, device_id string, temp_celsius double'
-
-    controller = os.getenv('PRAVEGA_CONTROLLER', 'tcp://127.0.0.1:9090')
-    scope = os.getenv('PRAVEGA_SCOPE', 'examples')
-    df = (spark
-          .readStream
-          .format("pravega")
-          .option("controller", controller)
-          .option("scope", scope)
-          .option("stream", "sensors")
-          .load()
-          )
-
-    df = df.withColumnRenamed('event', 'raw_event')
-    df = df.select('*', decode('raw_event', 'UTF-8').alias('event_string'))
-    df = df.select('*', from_json('event_string', schema=schema).alias('event'))
-    df = df.select('*', 'event.*')
-    df = df.drop('raw_event', 'event_string', 'event')
-    df = df.withWatermark('timestamp', '60 second')
-
-    df.printSchema()
-
-    if True:
-        (df
-         .writeStream
-         .trigger(processingTime='3 seconds')    # limit trigger rate
-         .outputMode('append')
-         .format('console')
-         .option('truncate', 'false')
-         .option('checkpointLocation', '/tmp/spark_checkpoints_test_sensor_processor')
          .start()
          .awaitTermination()
          )

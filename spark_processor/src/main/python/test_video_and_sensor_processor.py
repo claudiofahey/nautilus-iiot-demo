@@ -16,28 +16,10 @@ def main():
              )
     spark.conf.set('spark.sql.shuffle.partitions', '1')
     spark.conf.set('spark.sql.execution.arrow.enabled', 'true')
-    test2(spark)
+    test(spark)
 
 
-def test3(spark):
-    """
-    Test of Spark SQL batch mode.
-    """
-    controller = os.getenv('PRAVEGA_CONTROLLER', 'tcp://127.0.0.1:9090')
-    scope = os.getenv('PRAVEGA_SCOPE', 'examples')
-    df = (spark
-          .read
-          .format("pravega")
-          .option("controller", controller)
-          .option("scope", scope)
-          .option("stream", "video")
-          .option("encoding", "chunked_v1")
-          .load()
-          )
-    df.show()
-
-
-def test2(spark):
+def test(spark):
     """
     This demonstrates reading large images from Pravega and detecting defects.
     The data field contains a base-64 encoded PNG image file.
@@ -51,6 +33,8 @@ def test2(spark):
 
     controller = os.getenv('PRAVEGA_CONTROLLER', 'tcp://127.0.0.1:9090')
     scope = os.getenv('PRAVEGA_SCOPE', 'examples')
+    checkpoint_location = os.getenv('CHECKPOINT_LOCATION', '/tmp/spark_checkpoints_test_video_and_sensor_processor')
+
     df = (spark
           .readStream
           .format("pravega")
@@ -95,10 +79,28 @@ def test2(spark):
          .outputMode('append')
          .format('console')
          .option('truncate', 'false')
-         .option('checkpointLocation', '/tmp/spark_checkpoints_test_video_and_sensor_processor')
+         .option('checkpointLocation', checkpoint_location)
          .start()
          .awaitTermination()
          )
+
+
+def test_batch(spark):
+    """
+    Test of Spark SQL batch mode.
+    """
+    controller = os.getenv('PRAVEGA_CONTROLLER', 'tcp://127.0.0.1:9090')
+    scope = os.getenv('PRAVEGA_SCOPE', 'examples')
+    df = (spark
+          .read
+          .format("pravega")
+          .option("controller", controller)
+          .option("scope", scope)
+          .option("stream", "video")
+          .option("encoding", "chunked_v1")
+          .load()
+          )
+    df.show()
 
 
 def test1(spark):

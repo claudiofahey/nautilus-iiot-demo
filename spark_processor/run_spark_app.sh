@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
+# Run Spark Processor locally.
 
 set -ex
 
-# Use below for Nautilus
+# Use below for Nautilus SDK Desktop
 #packages="--packages \
 #io.pravega:pravega-connectors-spark:0.4.0-SNAPSHOT,\
 #io.pravega:pravega-keycloak-credentials:0.4.0-2030.d99411b-0.0.1-020.26736d2"
