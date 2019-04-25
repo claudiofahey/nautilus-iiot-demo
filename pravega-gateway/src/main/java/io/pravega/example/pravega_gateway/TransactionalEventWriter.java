@@ -12,10 +12,9 @@ public class TransactionalEventWriter<T> extends AbstractEventWriter<T>  {
     private final EventStreamWriter<T> pravegaWriter;
 
     /**
-     * The currently running transaction to which we writeEvent
+     * The currently running transaction to which we write
      */
     private Transaction<T> currentTxn = null;
-
 
     public TransactionalEventWriter(EventStreamWriter<T> pravegaWriter) {
         this.pravegaWriter = pravegaWriter;

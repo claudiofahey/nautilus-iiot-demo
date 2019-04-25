@@ -2,8 +2,10 @@ package io.pravega.example.pravega_gateway;
 
 import java.net.URI;
 
-// All parameters will come from environment variables. This makes it easy
-// to configure on Docker, Mesos, Kubernetes, etc.
+/**
+All parameters will come from environment variables. This makes it easy
+to configure on Docker, Mesos, Kubernetes, etc.
+*/
 class Parameters {
     // By default, we will connect to a standalone Pravega running on localhost.
     public static URI getControllerURI() {
