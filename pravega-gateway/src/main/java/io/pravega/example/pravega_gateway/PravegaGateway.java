@@ -3,7 +3,6 @@ package io.pravega.example.pravega_gateway;
 import com.google.protobuf.ByteString;
 import io.grpc.Context;
 import io.grpc.Server;
-import io.grpc.ServerBuilder;
 import io.grpc.Status;
 import io.grpc.netty.NettyServerBuilder;
 import io.grpc.stub.StreamObserver;

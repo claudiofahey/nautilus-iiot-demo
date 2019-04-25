@@ -191,6 +191,21 @@ Note that Spark checkpoints are stored in `/tmp/spark_checkpoints*`. These files
 failed jobs from the last successful checkpoint. If you change the Pravega stream or make significant
 changes to the job, you should delete these files to prevent Spark from trying to use the checkpoint.
 
+## Deploying to Nautilus
+
+### Deploy Pravega Gateway to Kubernetes
+
+Place pravega-keycloak-credentials-0.4.0-2030.d99411b-0.0.1-020.26736d2-shadow.jar in the lib directory.
+
+If your network requires non-standard TLS certificates to be trusted during the build process, 
+place them in the ca-certificates directory.
+
+```
+export DOCKER_REPOSITORY=hop-claudio-minikube-1.solarch.lab.emc.com:31001/nautilus-iiot-demo
+scripts/build-k8s-components.sh
+scripts/deploy-k8s-components.sh
+```
+
 # References
 
 - <http://pravega.io/>

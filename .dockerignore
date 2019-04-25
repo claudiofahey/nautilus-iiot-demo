@@ -1,0 +1,9 @@
+.git
+.gradle
+.idea
+gradle
+charts
+pravega-gateway/build
+pravega-gateway/env
+spark_processor
+streaming_data_generator

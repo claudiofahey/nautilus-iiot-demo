@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pravega-gateway
+  labels:
+    app: nautilus-iiot-demo
+    component: pravega-gateway
+    release: {{ .Release.Name }}
+spec:
+  serviceAccount: {{ .Release.Namespace }}-pravega
+  containers:
+  - name: pravega-gateway
+    image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+    imagePullPolicy: Always
+    ports:
+      - containerPort: 80
+        name: http
+    env:
+      - name: PRAVEGA_CONTROLLER
+        value: "{{ .Values.pravega.controller }}"

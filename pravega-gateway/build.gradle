@@ -17,6 +17,7 @@ repositories {
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 mainClassName = "io.pravega.example.pravega_gateway.PravegaGateway"
+archivesBaseName = "pravega-gateway"
 
 ext {
     junitVersion = '4.12'
@@ -70,5 +71,3 @@ sourceSets {
         }
     }
 }
-
-startScripts.enabled = false
