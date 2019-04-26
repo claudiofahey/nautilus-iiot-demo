@@ -1,0 +1,52 @@
+config:
+  BinderHub:
+    auth_enabled: true
+    hub_url: "http://proxy-public.examples.svc.cluster.local"
+    image_prefix: "hop-claudio-minikube-1.solarch.lab.emc.com:31001/binder-"
+    use_registry: true
+
+jupyterhub:
+  cull:
+    # don't cull authenticated users
+    users: False
+
+  hub:
+    services:
+      binder:
+        oauth_redirect_uri: "http://binder.examples.svc.cluster.local/oauth_callback"
+        oauth_client_id: "binder-oauth-client-test"
+    extraConfig:
+      hub_extra: |
+        c.JupyterHub.redirect_to_server = False
+
+      binder: |
+        from kubespawner import KubeSpawner
+
+        class BinderSpawner(KubeSpawner):
+          def start(self):
+              if 'image' in self.user_options:
+                # binder service sets the image spec via user options
+                self.image = self.user_options['image']
+              return super().start()
+        c.JupyterHub.spawner_class = BinderSpawner
+
+  singleuser:
+    # to make notebook servers aware of hub
+    cmd: jupyterhub-singleuser
+
+  auth:
+    type: dummy
+
+registry:
+  url: "hop-claudio-minikube-1.solarch.lab.emc.com:31001"
+
+#dind:
+#  enabled: false
+#  daemonset:
+#    image:
+#      name: hop-claudio-minikube-1.solarch.lab.emc.com:31001/docker
+#      tag: 18.09.2-dind
+
+image:
+  name: hop-claudio-minikube-1.solarch.lab.emc.com:31001/k8s-binderhub
+  tag: 'b9ff9c0'

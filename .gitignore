@@ -4,9 +4,12 @@
 .idea/
 .ipynb_checkpoints/
 .nfs*
+binderhub/secret.yaml
+binderhub/dind/certs.d/
 ca-certificates/
 !ca-certificates/README.txt
 data/
+jupyterhub/secret.yaml
 lib/
 !lib/README.txt
 out/

@@ -31,6 +31,8 @@ spark-submit \
 --conf spark.kubernetes.driver.volumes.persistentVolumeClaim.checkpointpvc.mount.readOnly=false \
 --conf spark.kubernetes.driver.volumes.persistentVolumeClaim.checkpointpvc.options.claimName=data-project \
 --conf spark.kubernetes.driverEnv.CHECKPOINT_LOCATION=/checkpoint/spark_checkpoints_${APP_NAME} \
+--conf spark.kubernetes.driver.request.cores=200m \
+--conf spark.kubernetes.executor.request.cores=200m \
 --jars \
 local:///home/lib/pravega-connectors-spark-0.4.0-SNAPSHOT.jar,\
 local:///home/lib/pravega-keycloak-credentials-0.4.0-2030.d99411b-0.0.1-020.26736d2-shadow.jar \
