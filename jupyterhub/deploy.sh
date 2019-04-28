@@ -9,7 +9,11 @@ helm repo update
 RELEASE=jupyterhub
 NAMESPACE=examples
 
-helm upgrade --install $RELEASE jupyterhub/jupyterhub \
-  --namespace $NAMESPACE  \
-  --version=0.8.0 \
-  --values config.yaml
+helm upgrade --install \
+$RELEASE \
+jupyterhub/jupyterhub \
+--namespace $NAMESPACE  \
+--version=0.8.0 \
+--timeout 600 \
+--values secret.yaml \
+--values config.yaml
