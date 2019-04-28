@@ -18,19 +18,19 @@ singleuser:
     tag: ae5f7e104dd5
   profileList:
 
+    - display_name: "Spark 2.4.0"
+      default: true
+      description: "Currently working with Pravega"
+      kubespawner_override:
+        image: hop-claudio-minikube-1.solarch.lab.emc.com:31001/all-spark-notebook:2343e33dec46
+
     - display_name: "Minimal environment"
       description: "To avoid too much bells and whistles: Python."
-      default: true
 
     - display_name: "Data Science environment"
       description: "If you want the additional bells and whistles: Python, R, and Julia."
       kubespawner_override:
         image: jupyter/datascience-notebook:ae5f7e104dd5
-
-    - display_name: "Spark 2.4.0"
-      description: "Currently working with Pravega"
-      kubespawner_override:
-        image: jupyter/all-spark-notebook:2343e33dec46
 
     - display_name: "Spark 2.4.2"
       description: "Not working yet"
