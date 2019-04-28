@@ -26,7 +26,9 @@ spec:
           imagePullPolicy: Always
           command: ["video_data_generator.py"]
           env:
-            - name: GENERATOR_GATEWAY
-              value: "{{ .Values.generator.gateway }}"
             - name: GENERATOR_FPS
               value: "{{ .Values.video_generator.fps }}"
+            - name: GENERATOR_GATEWAY
+              value: "{{ .Values.generator.gateway }}"
+            - name: GENERATOR_STREAM
+              value: "{{ .Values.video_generator.stream }}"

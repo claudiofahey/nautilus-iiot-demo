@@ -7,3 +7,4 @@ generator:
 
 video_generator:
   fps: 0.02
+  stream: video
