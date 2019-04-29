@@ -182,6 +182,10 @@ cd streaming_data_generator
 
 This will run a Python Spark application that reads the generated data. 
 
+Edit the file `spark_processor/run_spark_app.sh`.
+Uncomment the lines following "Use below for Nautilus SDK Desktop" and comment the lines
+following "Use below for local Pravega".
+
 ```
 cd spark_processor
 ./test_video_and_sensor_processor.sh
@@ -217,7 +221,6 @@ kubectl apply -f spark_processor/spark-service-account.yaml -n examples
 spark_processor/submit-k8s.sh test_sensor_processor
 spark_processor/submit-k8s.sh test_video_and_sensor_processor
 ```
-
 
 # References
 
