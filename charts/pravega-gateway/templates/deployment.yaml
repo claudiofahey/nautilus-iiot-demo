@@ -30,3 +30,12 @@ spec:
           env:
             - name: PRAVEGA_CONTROLLER
               value: "{{ .Values.pravega.controller }}"
+            - name: JAVA_OPTS
+              value: "-XshowSettings:vm -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap -XX:MaxRAMFraction=1"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "2000m"

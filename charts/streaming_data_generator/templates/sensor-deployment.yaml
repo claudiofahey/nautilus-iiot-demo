@@ -28,3 +28,10 @@ spec:
           env:
             - name: GENERATOR_GATEWAY
               value: "{{ .Values.generator.gateway }}"
+          resources:
+            requests:
+              memory: "256Mi"
+              cpu: "100m"
+            limits:
+              memory: "256Mi"
+              cpu: "2000m"

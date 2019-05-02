@@ -205,7 +205,7 @@ If your network requires non-standard TLS certificates to be trusted during the 
 place them in the ca-certificates directory.
 
 ```
-export DOCKER_REPOSITORY=your_repo_host:your_repo_port/nautilus-iiot-demo
+export DOCKER_REPOSITORY=<hostname>:<port>/<namespace>
 export IMAGE_TAG=0.3.0
 scripts/build-k8s-components.sh
 scripts/deploy-k8s-components.sh
@@ -214,7 +214,7 @@ scripts/deploy-k8s-components.sh
 ### Deploy Spark Processor to Kubernetes
 
 ```
-export DOCKER_REPOSITORY=your_repo_host:your_repo_port/nautilus-iiot-demo
+export DOCKER_REPOSITORY=<hostname>:<port>/<namespace>
 export IMAGE_TAG=0.3.0
 spark_processor/build-k8s.sh
 kubectl apply -f spark_processor/spark-service-account.yaml -n examples
