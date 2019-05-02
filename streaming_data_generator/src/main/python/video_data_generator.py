@@ -51,13 +51,13 @@ def data_generator(camera, ssrc, frames_per_sec, avg_data_size, include_checksum
     frame_number = 0
     while True:
         timestamp = int(frame_number / (frames_per_sec / 1000.0) + t0_ms)
-        data_size = np.random.randint(1, avg_data_size * 2 - 4 + 1)
-        # data_size = avg_data_size
+        # data_size = np.random.randint(1, avg_data_size * 2 - 4 + 1)
+        data_size = avg_data_size
         image_width = math.ceil(math.sqrt(data_size / 3))
         rgb = np.random.randint(255, size=(image_width, image_width, 3), dtype=np.uint8)
         _, data = cv2.imencode('.png', rgb, [cv2.IMWRITE_PNG_COMPRESSION, 0])
-        if frame_number == 0:
-            data.tofile('/tmp/camera%d-%d.png' % (camera, frame_number))
+        # if frame_number == 0:
+        #     data.tofile('/tmp/camera%d-%d.png' % (camera, frame_number))
         # data = np.random.bytes(data_size)
         if include_checksum:
             # Add CRC32 checksum to allow for error detection.
@@ -85,7 +85,7 @@ def encode_record(record: dict) -> bytes:
     return encoded
 
 
-def pravega_request_generator(data_generator, scope, stream, max_chunk_size):
+def pravega_request_generator(data_generator, scope, stream, max_chunk_size, use_transactions):
     for record in data_generator:
         t = record['timestamp']
         sleep_sec = t/1000.0 - time()
@@ -98,8 +98,8 @@ def pravega_request_generator(data_generator, scope, stream, max_chunk_size):
                 event=chunked_event,
                 scope=scope,
                 stream=stream,
-                use_transaction=True,
-                commit=is_final_chunk,
+                use_transaction=use_transactions,
+                commit=is_final_chunk and use_transactions,
                 )
             # logging.info(request)
             yield request
@@ -113,11 +113,11 @@ def pravega_request_generator(data_generator, scope, stream, max_chunk_size):
             logging.info('%d: %s' % (record_to_log['camera'], json.dumps(record_to_log)))
 
 
-def single_generator_process(camera, frames_per_sec, max_chunk_size, avg_data_size, checksum, gateway, scope, stream):
+def single_generator_process(camera, frames_per_sec, max_chunk_size, avg_data_size, checksum, gateway, scope, stream, use_transactions):
     t0_ms = int(time() * 1000)
     ssrc = np.random.randint(0, 2**31)
     data_iter = data_generator(camera, ssrc, frames_per_sec, avg_data_size, checksum, t0_ms)
-    pravega_request_iter = pravega_request_generator(data_iter, scope, stream, max_chunk_size)
+    pravega_request_iter = pravega_request_generator(data_iter, scope, stream, max_chunk_size, use_transactions)
     with grpc.insecure_channel(gateway) as pravega_channel:
         pravega_client = pravega.grpc.PravegaGatewayStub(pravega_channel)
         pravega_client.CreateScope(pravega.pb.CreateScopeRequest(scope=scope))
@@ -145,7 +145,7 @@ def main():
         '--max-chunk-size', default=1024*1024, type=int,
         action='store', dest='max_chunk_size', help='Maximum size of chunk (bytes)')
     parser.add_argument(
-        '--avg-data-size', default=10*1024*1024, type=int,
+        '--avg-data-size', default=10*1024, type=int,
         action='store', dest='avg_data_size', help='Average size of data (bytes)')
     parser.add_argument(
         '--fps', default=1.0, type=float,
@@ -153,6 +153,9 @@ def main():
     parser.add_argument(
         '--checksum', default=False,
         action='store_true', dest='checksum', help='Prepend the data with a checksum that can be used to detect errors')
+    parser.add_argument(
+        '--use-transactions', default=False,
+        action='store_true', dest='use_transactions', help='If true, use Pravega transactions')
     options, unparsed = parser.parse_known_args()
 
     cameras = [i for i in range(options.num_cameras)]
@@ -168,7 +171,9 @@ def main():
                     options.checksum,
                     options.gateway,
                     options.scope,
-                    options.stream))
+                    options.stream,
+                    options.use_transactions,
+                ))
             for camera in cameras]
         [p.start() for p in processes]
         [p.join() for p in processes]

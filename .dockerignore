@@ -1,8 +1,9 @@
 .git
 .gradle
 .idea
-gradle
 charts
+env
+gradle
 pravega-gateway/build
 pravega-gateway/env
 spark_processor/env

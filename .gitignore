@@ -9,6 +9,7 @@ binderhub/dind/certs.d/
 ca-certificates/
 !ca-certificates/README.txt
 data/
+env/
 jupyterhub/secret.yaml
 lib/
 !lib/README.txt

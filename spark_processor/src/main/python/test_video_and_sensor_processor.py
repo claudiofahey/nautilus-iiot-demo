@@ -85,6 +85,51 @@ def test(spark):
          )
 
 
+def test2(spark):
+    """
+    """
+    schema='timestamp timestamp, frame_number int, camera int, ssrc int, data binary'
+
+    # To allow for large images and avoid out-of-memory, the JVM will
+    # send to the Python UDF this batch size.
+    spark.conf.set('spark.sql.execution.arrow.maxRecordsPerBatch', '1')
+
+    controller = os.getenv('PRAVEGA_CONTROLLER', 'tcp://127.0.0.1:9090')
+    scope = os.getenv('PRAVEGA_SCOPE', 'examples')
+
+    df = (spark
+          .readStream
+          .format("pravega")
+          .option("controller", controller)
+          .option("scope", scope)
+          .option("stream", "video")
+          .option("encoding", "chunked_v1")
+          .load()
+          )
+
+    df = df.withColumnRenamed('event', 'raw_event')
+    df = df.select('*', decode('raw_event', 'UTF-8').alias('event_string'))
+    df = df.select('*', from_json('event_string', schema=schema).alias('event'))
+    df = df.select('*', 'event.*')
+    df = df.select('*', length('data'))
+    df = df.withWatermark('timestamp', '60 second')
+
+    def f(batch_df, batch_id):
+        print('batch_id=%d' % batch_id)
+        png0 = batch_df.select('data').limit(1).collect()[0][0]
+        print('png0=%s' % png0[0:20])
+    #     IPython.display.clear_output(wait=True)
+    #     IPython.display.display(IPython.display.Image(data=png0))
+
+    (df
+     .writeStream
+     .trigger(processingTime='3 seconds')  # limit trigger rate
+     .foreachBatch(f)
+     .start()
+     .awaitTermination()
+     )
+
+
 def test_batch(spark):
     """
     Test of Spark SQL batch mode.
