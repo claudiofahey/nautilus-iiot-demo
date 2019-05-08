@@ -6,13 +6,20 @@ import io.grpc.Status;
 import io.grpc.stub.StreamObserver;
 import io.pravega.client.ClientFactory;
 import io.pravega.client.admin.ReaderGroupManager;
+import io.pravega.client.admin.StreamInfo;
 import io.pravega.client.admin.StreamManager;
+import io.pravega.client.batch.BatchClient;
+import io.pravega.client.batch.SegmentIterator;
+import io.pravega.client.batch.SegmentRange;
+import io.pravega.client.segment.impl.Segment;
 import io.pravega.client.stream.*;
 import io.pravega.client.stream.impl.ByteBufferSerializer;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -22,21 +29,36 @@ class PravegaServerImpl extends PravegaGatewayGrpc.PravegaGatewayImplBase {
 
     @Override
     public void createScope(CreateScopeRequest req, StreamObserver<CreateScopeResponse> responseObserver) {
-        StreamManager streamManager = StreamManager.create(Parameters.getControllerURI());
-        boolean created = streamManager.createScope(req.getScope());
-        responseObserver.onNext(CreateScopeResponse.newBuilder().setCreated(created).build());
-        responseObserver.onCompleted();
+        try (StreamManager streamManager = StreamManager.create(Parameters.getControllerURI())) {
+            boolean created = streamManager.createScope(req.getScope());
+            responseObserver.onNext(CreateScopeResponse.newBuilder().setCreated(created).build());
+            responseObserver.onCompleted();
+        }
     }
 
     @Override
     public void createStream(CreateStreamRequest req, StreamObserver<CreateStreamResponse> responseObserver) {
-        StreamManager streamManager = StreamManager.create(Parameters.getControllerURI());
-        StreamConfiguration streamConfig = StreamConfiguration.builder()
-                .scalingPolicy(ScalingPolicy.fixed(1))
-                .build();
-        boolean created = streamManager.createStream(req.getScope(), req.getStream(), streamConfig);
-        responseObserver.onNext(CreateStreamResponse.newBuilder().setCreated(created).build());
-        responseObserver.onCompleted();
+        try (StreamManager streamManager = StreamManager.create(Parameters.getControllerURI())) {
+            final int minNumSegments = Integer.max(1, req.getScalingPolicy().getMinNumSegments());
+            StreamConfiguration streamConfig = StreamConfiguration.builder()
+                    .scalingPolicy(io.pravega.client.stream.ScalingPolicy.fixed(minNumSegments))
+                    .build();
+            boolean created = streamManager.createStream(req.getScope(), req.getStream(), streamConfig);
+            responseObserver.onNext(CreateStreamResponse.newBuilder().setCreated(created).build());
+            responseObserver.onCompleted();
+        }
+    }
+
+    @Override
+    public void updateStream(UpdateStreamRequest req, StreamObserver<UpdateStreamResponse> responseObserver) {
+        try (StreamManager streamManager = StreamManager.create(Parameters.getControllerURI())) {
+            StreamConfiguration streamConfig = StreamConfiguration.builder()
+                    .scalingPolicy(io.pravega.client.stream.ScalingPolicy.fixed(req.getScalingPolicy().getMinNumSegments()))
+                    .build();
+            boolean updated = streamManager.updateStream(req.getScope(), req.getStream(), streamConfig);
+            responseObserver.onNext(UpdateStreamResponse.newBuilder().setUpdated(updated).build());
+            responseObserver.onCompleted();
+        }
     }
 
     @Override
@@ -216,5 +238,57 @@ class PravegaServerImpl extends PravegaGatewayGrpc.PravegaGatewayImplBase {
                 responseObserver.onCompleted();
             }
         };
+    }
+
+    @Override
+    public void getStreamInfo(GetStreamInfoRequest req, StreamObserver<GetStreamInfoResponse> responseObserver) {
+        try (StreamManager streamManager = StreamManager.create(Parameters.getControllerURI())) {
+            StreamInfo streamInfo = streamManager.getStreamInfo(req.getScope(), req.getStream());
+            StreamCut.Builder headStreamCutBuilder = StreamCut.newBuilder()
+                    .setText(streamInfo.getHeadStreamCut().asText());
+            for (Map.Entry<Segment, Long> entry : streamInfo.getHeadStreamCut().asImpl().getPositions().entrySet()) {
+                headStreamCutBuilder.putCut(entry.getKey().getSegmentId(), entry.getValue());
+            }
+            StreamCut.Builder tailStreamCutBuilder = StreamCut.newBuilder()
+                    .setText(streamInfo.getTailStreamCut().asText());
+            for (Map.Entry<Segment, Long> entry : streamInfo.getTailStreamCut().asImpl().getPositions().entrySet()) {
+                tailStreamCutBuilder.putCut(entry.getKey().getSegmentId(), entry.getValue());
+            }
+            GetStreamInfoResponse response = GetStreamInfoResponse.newBuilder()
+                    .setHeadStreamCut(headStreamCutBuilder.build())
+                    .setTailStreamCut(tailStreamCutBuilder.build())
+                    .build();
+            responseObserver.onNext(response);
+            responseObserver.onCompleted();
+        }
+    }
+
+    @Override
+    public void batchReadEvents(BatchReadEventsRequest req, StreamObserver<BatchReadEventsResponse> responseObserver) {
+        final URI controllerURI = Parameters.getControllerURI();
+        final String scope = req.getScope();
+        final String streamName = req.getStream();
+        io.pravega.client.stream.StreamCut fromStreamCut = io.pravega.client.stream.StreamCut.from(req.getFromStreamCut().getText());
+        io.pravega.client.stream.StreamCut toStreamCut = io.pravega.client.stream.StreamCut.from(req.getToStreamCut().getText());
+
+        try (ClientFactory clientFactory = ClientFactory.withScope(scope, controllerURI)) {
+            BatchClient batchClient = clientFactory.createBatchClient();
+            batchClient.getSegments(Stream.of(scope, streamName), fromStreamCut, toStreamCut).getIterator().forEachRemaining(
+                    segmentRange -> {
+                        SegmentIterator<ByteBuffer> iterator = batchClient.readSegment(segmentRange, new ByteBufferSerializer());
+                        while (iterator.hasNext()) {
+                            long offset = iterator.getOffset();
+                            ByteBuffer event = iterator.next();
+                            BatchReadEventsResponse response = BatchReadEventsResponse.newBuilder()
+                                    .setEvent(ByteString.copyFrom(event))
+                                    .setSegmentId(segmentRange.getSegmentId())
+                                    .setOffset(offset).build();
+                            responseObserver.onNext(response);
+                        }
+                    }
+            );
+        }
+
+        responseObserver.onCompleted();
     }
 }

@@ -43,3 +43,11 @@ This will build the Python files necessary to allow a Python application to call
     ```
     ./build_python.sh
     ```
+
+# Run Test and Sample Applications
+
+```
+conda activate ./env
+pip install -e src/main/python
+src/test/python/event_generator.py
+```

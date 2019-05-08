@@ -24,6 +24,11 @@ class PravegaGatewayStub(object):
         request_serializer=pravega_dot_pravega__pb2.CreateStreamRequest.SerializeToString,
         response_deserializer=pravega_dot_pravega__pb2.CreateStreamResponse.FromString,
         )
+    self.UpdateStream = channel.unary_unary(
+        '/PravegaGateway/UpdateStream',
+        request_serializer=pravega_dot_pravega__pb2.UpdateStreamRequest.SerializeToString,
+        response_deserializer=pravega_dot_pravega__pb2.UpdateStreamResponse.FromString,
+        )
     self.ReadEvents = channel.unary_stream(
         '/PravegaGateway/ReadEvents',
         request_serializer=pravega_dot_pravega__pb2.ReadEventsRequest.SerializeToString,
@@ -33,6 +38,16 @@ class PravegaGatewayStub(object):
         '/PravegaGateway/WriteEvents',
         request_serializer=pravega_dot_pravega__pb2.WriteEventsRequest.SerializeToString,
         response_deserializer=pravega_dot_pravega__pb2.WriteEventsResponse.FromString,
+        )
+    self.GetStreamInfo = channel.unary_unary(
+        '/PravegaGateway/GetStreamInfo',
+        request_serializer=pravega_dot_pravega__pb2.GetStreamInfoRequest.SerializeToString,
+        response_deserializer=pravega_dot_pravega__pb2.GetStreamInfoResponse.FromString,
+        )
+    self.BatchReadEvents = channel.unary_stream(
+        '/PravegaGateway/BatchReadEvents',
+        request_serializer=pravega_dot_pravega__pb2.BatchReadEventsRequest.SerializeToString,
+        response_deserializer=pravega_dot_pravega__pb2.BatchReadEventsResponse.FromString,
         )
 
 
@@ -54,6 +69,13 @@ class PravegaGatewayServicer(object):
     context.set_details('Method not implemented!')
     raise NotImplementedError('Method not implemented!')
 
+  def UpdateStream(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
   def ReadEvents(self, request, context):
     # missing associated documentation comment in .proto file
     pass
@@ -62,6 +84,20 @@ class PravegaGatewayServicer(object):
     raise NotImplementedError('Method not implemented!')
 
   def WriteEvents(self, request_iterator, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def GetStreamInfo(self, request, context):
+    # missing associated documentation comment in .proto file
+    pass
+    context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+    context.set_details('Method not implemented!')
+    raise NotImplementedError('Method not implemented!')
+
+  def BatchReadEvents(self, request, context):
     # missing associated documentation comment in .proto file
     pass
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -81,6 +117,11 @@ def add_PravegaGatewayServicer_to_server(servicer, server):
           request_deserializer=pravega_dot_pravega__pb2.CreateStreamRequest.FromString,
           response_serializer=pravega_dot_pravega__pb2.CreateStreamResponse.SerializeToString,
       ),
+      'UpdateStream': grpc.unary_unary_rpc_method_handler(
+          servicer.UpdateStream,
+          request_deserializer=pravega_dot_pravega__pb2.UpdateStreamRequest.FromString,
+          response_serializer=pravega_dot_pravega__pb2.UpdateStreamResponse.SerializeToString,
+      ),
       'ReadEvents': grpc.unary_stream_rpc_method_handler(
           servicer.ReadEvents,
           request_deserializer=pravega_dot_pravega__pb2.ReadEventsRequest.FromString,
@@ -90,6 +131,16 @@ def add_PravegaGatewayServicer_to_server(servicer, server):
           servicer.WriteEvents,
           request_deserializer=pravega_dot_pravega__pb2.WriteEventsRequest.FromString,
           response_serializer=pravega_dot_pravega__pb2.WriteEventsResponse.SerializeToString,
+      ),
+      'GetStreamInfo': grpc.unary_unary_rpc_method_handler(
+          servicer.GetStreamInfo,
+          request_deserializer=pravega_dot_pravega__pb2.GetStreamInfoRequest.FromString,
+          response_serializer=pravega_dot_pravega__pb2.GetStreamInfoResponse.SerializeToString,
+      ),
+      'BatchReadEvents': grpc.unary_stream_rpc_method_handler(
+          servicer.BatchReadEvents,
+          request_deserializer=pravega_dot_pravega__pb2.BatchReadEventsRequest.FromString,
+          response_serializer=pravega_dot_pravega__pb2.BatchReadEventsResponse.SerializeToString,
       ),
   }
   generic_handler = grpc.method_handlers_generic_handler(

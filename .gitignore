@@ -16,5 +16,6 @@ lib/
 out/
 pravega-gateway/build
 pravega-gateway/env
+pravega-gateway/src/main/python/pravega.egg-info
 spark_processor/env
 streaming_data_generator/env
