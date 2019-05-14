@@ -13,3 +13,11 @@ COPY ca-certificates/*.crt /usr/local/share/ca-certificates/
 RUN update-ca-certificates
 
 USER ${NB_USER}
+
+# Install Pravega Gateway library
+COPY --chown=1000 pravega-gateway/src/main/python /tmp/pravega-gateway-lib
+RUN conda install -y \
+        grpcio \
+        grpcio-tools && \
+    pip install /tmp/pravega-gateway-lib && \
+    rm -rf /tmp/pravega-gateway-lib
