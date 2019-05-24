@@ -14,13 +14,45 @@ and visualization on streaming Industrial Internet-Of-Things (IOT) data.
   Pravega provides dynamic scaling that can increase and decrease parallelism to automatically respond
   to changes in the event rate.
 
-  See <http://pravega.io> for more information.
+  For more information, see <http://pravega.io>.
 
+- Flink: Apache Flink® is an open-source stream processing framework for distributed, high-performing, always-available, and accurate data streaming applications.
+  See <https://flink.apache.org> for more information.
+  
 - Apache Spark: This is a unified analytics engine for large-scale data processing.
   It allows writing analytics applications in Java, Scala, Python, R, and SQL.
+  
+  This project uses the Spark Connector for Pravega to allow Python/Spark (PySpark) applications
+  to read and analyze data in Pravega streams.
+
+- Streaming Data Generator: A streaming data generator has been
+  created that can generate synthetic sensor and video data and send it to the [Pravega Gateway](pravega-gateway).
+  These are Python scripts and are in the [streaming_data_generator](streaming_data_generator) directory.
+  
+- Spark Jobs: These are various PySpark applications that show how to read and process 
+  sensor and video data from a Pravega stream.
+  These are Python scripts and are in the [spark_processor](spark_processor) directory.
+  
+- Pravega Gateway: This is a GRPC server that provides a gateway to a Pravega server.
+  It provides **limited** Pravega functionality to any environment that support GRPC, including Python.
+  
+  For more information, see [Pravega Gateway](pravega-gateway).
+  
+- Jupyter Notebook: This is an open-source web application that allows you to create and share
+  documents that contain live code, equations, visualizations, video, and narrative text.
+  
+  For more information, see <https://jupyter.org/>.
+  
+- Kubernetes: Kubernetes (K8s) is an open-source system for automating deployment, scaling, and management
+  of containerized applications.
+  
+  This demo contains scripts and code to deploy all components on Kubernetes.
+     
+  For more information, see <https://kubernetes.io/>.
 
 - Docker: This demo uses Docker and Docker Compose to greatly simplify the deployment of the various
   components on Linux and/or Windows servers, desktops, or even laptops.
+  
   For more information, see <https://en.wikipedia.org/wiki/Docker_(software)>.
 
 ## Building and Running the Demo
@@ -221,6 +253,11 @@ kubectl apply -f spark_processor/spark-service-account.yaml -n examples
 spark_processor/submit-k8s.sh test_sensor_processor
 spark_processor/submit-k8s.sh test_video_and_sensor_processor
 ```
+
+# Notes
+
+- Apache Flink jobs have been temporarily removed from this project until they are updated.
+  However, the [v0.2 branch](https://github.com/claudiofahey/nautilus-iiot-demo/tree/r0.2) has the previous code.
 
 # References
 
