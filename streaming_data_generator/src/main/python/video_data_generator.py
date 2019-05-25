@@ -10,15 +10,15 @@ import configargparse as argparse
 from multiprocessing import Process
 import json
 import numpy as np
-import cv2
 import base64
 import grpc
 import logging
-import zlib
 import struct
 import math
 from datetime import datetime, timedelta
 import pravega
+from PIL import Image, ImageDraw, ImageFont
+import io
 
 
 def chunks(l, n):
@@ -47,22 +47,29 @@ def pravega_chunker_v1(payload, max_chunk_size):
         yield (chunked_event, chunk_index, is_final_chunk)
 
 
+def build_image_bytes(num_bytes, camera, frame_number):
+    width = math.ceil(math.sqrt(num_bytes / 3))
+    height = width
+    font_size = int(min(width, height) * 0.15)
+    img = Image.new('RGB', (width, height), (25, 25, 240, 0))
+    font = ImageFont.truetype('/usr/share/fonts/truetype/freefont/FreeSans.ttf', font_size)
+    draw = ImageDraw.Draw(img)
+    draw.text((width//10, height//10), 'FRAME\n%05d\nCAMERA\n %03d' % (frame_number, camera), font=font, align='center')
+    out_bytesio = io.BytesIO()
+    img.save(out_bytesio, format='PNG', compress_level=0)
+    out_bytes = out_bytesio.getvalue()
+    return out_bytes
+
+
 def data_generator(camera, ssrc, frames_per_sec, avg_data_size, include_checksum, t0_ms):
     frame_number = 0
     while True:
         timestamp = int(frame_number / (frames_per_sec / 1000.0) + t0_ms)
-        # data_size = np.random.randint(1, avg_data_size * 2 - 4 + 1)
-        data_size = avg_data_size
-        image_width = math.ceil(math.sqrt(data_size / 3))
-        rgb = np.random.randint(255, size=(image_width, image_width, 3), dtype=np.uint8)
-        _, data = cv2.imencode('.png', rgb, [cv2.IMWRITE_PNG_COMPRESSION, 0])
-        # if frame_number == 0:
-        #     data.tofile('/tmp/camera%d-%d.png' % (camera, frame_number))
-        # data = np.random.bytes(data_size)
-        if include_checksum:
-            # Add CRC32 checksum to allow for error detection.
-            chucksum = struct.pack('!I', zlib.crc32(data))
-            data = chucksum + data
+        num_bytes = avg_data_size
+        data = build_image_bytes(num_bytes, camera, frame_number)
+        if frame_number == 0:
+            with open('/tmp/camera%d-%d.png' % (camera, frame_number), 'wb') as f:
+                f.write(data)
         record = {
             'timestamp': timestamp,
             'frame_number': frame_number,
@@ -139,7 +146,7 @@ def main():
         '--stream', default='video',
         action='store', dest='stream', help='Pravega stream')
     parser.add_argument(
-        '--num-cameras', default=1, type=int,
+        '--num-cameras', default=2, type=int,
         action='store', dest='num_cameras', help='Number of cameras to simulate')
     parser.add_argument(
         '--max-chunk-size', default=1024*1024, type=int,

@@ -1,28 +1,40 @@
 #!/usr/bin/env bash
-# Run Spark Processor locally.
+# Run Pravega Java/Scala/Python Spark applications locally.
 
 set -ex
 
-# Use below for Nautilus SDK Desktop
-#packages="--packages \
-#io.pravega:pravega-connectors-spark:0.4.0-SNAPSHOT,\
-#io.pravega:pravega-keycloak-credentials:0.4.0-2030.d99411b-0.0.1-020.26736d2"
-#export PRAVEGA_CONTROLLER=${PRAVEGA_CONTROLLER:-tcp://nautilus-pravega-controller.nautilus-pravega.svc.cluster.local:9090}
+USE_NAUTILUS=${USE_NAUTILUS:-0}
+USE_IN_PROCESS_SPARK=${USE_IN_PROCESS_SPARK:-1}
 
-# Use below for local Pravega
-packages="--jars ${HOME}/.m2/repository/io/pravega/pravega-connectors-spark/0.4.0-SNAPSHOT/pravega-connectors-spark-0.4.0-SNAPSHOT.jar"
-export PRAVEGA_CONTROLLER=${PRAVEGA_CONTROLLER:-tcp://localhost:9090}
+KEY_CLOACK_CREDENTIALS_VERSION=${KEY_CLOACK_CREDENTIALS_VERSION:-0.4.0-2030.d99411b-0.0.1-020.26736d2}
+SPARK_CONNECTOR_VERSION=${SPARK_CONNECTOR_VERSION:-0.4.0-SNAPSHOT}
+
+if [ $USE_NAUTILUS == "1" ]
+then
+    PACKAGES="--packages \
+io.pravega:pravega-connectors-spark:${SPARK_CONNECTOR_VERSION},\
+io.pravega:pravega-keycloak-credentials:${KEY_CLOACK_CREDENTIALS_VERSION}"
+    export PRAVEGA_CONTROLLER=${PRAVEGA_CONTROLLER:-tcp://nautilus-pravega-controller.nautilus-pravega.svc.cluster.local:9090}
+else
+    CONNECTOR_JAR="${HOME}/.m2/repository/io/pravega/pravega-connectors-spark/${SPARK_CONNECTOR_VERSION}/pravega-connectors-spark-${SPARK_CONNECTOR_VERSION}.jar"
+    ls -lh "${CONNECTOR_JAR}"
+    PACKAGES="--jars ${CONNECTOR_JAR}"
+    export PRAVEGA_CONTROLLER=${PRAVEGA_CONTROLLER:-tcp://localhost:9090}
+fi
 
 export PRAVEGA_SCOPE=${PRAVEGA_SCOPE:-examples}
-export PYSPARK_PYTHON=$PWD/env/bin/python
 export PATH=$PATH:$HOME/spark/current/bin
 
-master=local[2]
-#master=spark://localhost:7077
+if [ $USE_IN_PROCESS_SPARK == "1" ]
+then
+    SPARK_MASTER="local[2]"
+else
+    SPARK_MASTER="spark://$(hostname):7077"
+fi
 
 spark-submit \
---master $master \
+--master $SPARK_MASTER \
 --driver-memory 4g \
 --executor-memory 4g \
-$packages \
-$*
+$PACKAGES \
+$* |& tee -a app.log
