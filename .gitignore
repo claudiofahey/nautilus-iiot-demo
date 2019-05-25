@@ -3,6 +3,7 @@
 .gradle/
 .idea/
 .ipynb_checkpoints/
+*.log
 .nfs*
 binderhub/secret.yaml
 binderhub/dind/certs.d/

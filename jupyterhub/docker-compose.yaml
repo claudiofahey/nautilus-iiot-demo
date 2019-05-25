@@ -1,0 +1,11 @@
+version: '2'
+
+services:
+
+  jupyter:
+    image: ${DOCKER_REPOSITORY}/all-spark-notebook:f646d2b2a3af
+    volumes:
+      - ./notebooks:/home/jovyan/notebooks:rw
+    ports:
+      - "8888:8888"
+    network_mode: host

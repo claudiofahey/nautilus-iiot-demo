@@ -4,9 +4,11 @@ from pyspark.sql.functions import window, collect_list, pandas_udf, PandasUDFTyp
 from pyspark.sql.types import StructType, StructField, TimestampType, IntegerType, DoubleType, BinaryType, BooleanType
 import os
 import sys
-import cv2
+# import cv2
 import numpy as np
 import shutil
+from PIL import Image, ImageDraw, ImageFont
+import io
 
 
 def main():
@@ -65,18 +67,11 @@ def test_create_thumbnails(spark):
 
     @pandas_udf(returnType='frame_number int, data binary', functionType=PandasUDFType.GROUPED_MAP)
     def combine_thumbnails(df):
+        """Input is a Pandas dataframe with 1 row per camera and frame.
+        Output should be a Pandas dataframe with 1 row per frame."""
         print(f'combine_thumbnails: s={df}')
         df.info(verbose=True)
-        def f(data):
-            print('combine_thumbnails: data')
-            # # Decode the image.
-            # numpy_array = np.frombuffer(data, dtype='uint8')
-            # rgb = cv2.imdecode(numpy_array, -1)
-            # # Perform a computation on the image to determine the probability of a defect.
-            # # For now, we just calculate the mean pixel value.
-            # # We can use any Python library, including NumPy and TensorFlow.
-            # p = rgb.mean() / 255.0
-            return 3.14
+
         return df[['frame_number', 'data']]
 
     # @pandas_udf(returnType=DoubleType(), functionType=PandasUDFType.SCALAR)
@@ -96,10 +91,11 @@ def test_create_thumbnails(spark):
 
     df = grp.apply(combine_thumbnails)
     # df = df.select('*', combine_thumbnails('cameras').alias('combined'))
+    df = df.select(func.to_json(func.struct(df["frame_number"], df["data"])).alias("event"))
 
     df.printSchema()
 
-    if True:
+    if False:
         (df
          .writeStream
          .trigger(processingTime='3 seconds')    # limit trigger rate
@@ -109,6 +105,19 @@ def test_create_thumbnails(spark):
          .option('checkpointLocation', checkpoint_location)
          .start()
          .awaitTermination()
+         )
+    else:
+        (df
+        .writeStream
+        .trigger(processingTime="3 seconds")
+        .outputMode("append")
+        .format("pravega")
+        .option("controller", controller)
+        .option("scope", scope)
+        .option("stream", "combinedvideo")
+        .option("checkpointLocation", "/tmp/spark-checkpoints-combine_thumbnails")
+        .start()
+        .awaitTermination()
          )
 
 

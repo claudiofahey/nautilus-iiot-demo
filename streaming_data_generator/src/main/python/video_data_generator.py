@@ -146,7 +146,7 @@ def main():
         '--stream', default='video',
         action='store', dest='stream', help='Pravega stream')
     parser.add_argument(
-        '--num-cameras', default=2, type=int,
+        '--num-cameras', default=4, type=int,
         action='store', dest='num_cameras', help='Number of cameras to simulate')
     parser.add_argument(
         '--max-chunk-size', default=1024*1024, type=int,
