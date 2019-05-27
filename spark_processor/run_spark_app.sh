@@ -27,7 +27,7 @@ export PATH=$PATH:$HOME/spark/current/bin
 
 if [ $USE_IN_PROCESS_SPARK == "1" ]
 then
-    SPARK_MASTER="local[2]"
+    SPARK_MASTER="local[8]"
 else
     SPARK_MASTER="spark://$(hostname):7077"
 fi

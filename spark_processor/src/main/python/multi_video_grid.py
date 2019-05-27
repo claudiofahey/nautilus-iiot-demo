@@ -19,7 +19,7 @@ def main():
              .builder
              .getOrCreate()
              )
-    spark.conf.set('spark.sql.shuffle.partitions', '1')
+    spark.conf.set('spark.sql.shuffle.partitions', '4')
     spark.conf.set('spark.sql.execution.arrow.enabled', 'true')
     run(spark)
 
@@ -60,6 +60,18 @@ def run(spark):
     df = df.withWatermark('timestamp', '1 second')
     df = df.drop('raw_event', 'event_string', 'event')
 
+    thumbnail_size = (80, 80)
+
+    @pandas_udf(returnType='binary', functionType=PandasUDFType.SCALAR)
+    def decode_and_scale_image(data_series, ssrc):
+        def f(data):
+            in_pil = Image.open(io.BytesIO(data))
+            out_pil = in_pil.resize(thumbnail_size)
+            return out_pil.tobytes()
+        return data_series.apply(f)
+
+    df = df.select('*', decode_and_scale_image(df['data'], df['ssrc']).alias('image'))
+
     grp = df.groupby(
             # window('timestamp', '1 second'),
             'frame_number',
@@ -79,27 +91,30 @@ def run(spark):
     def combine_images_into_grid(df):
         if df.empty:
             return None
-        # Get first image to determine height, width.
-        row0 = df.iloc[0]
-        image0_png_bytes = row0['data']
-        image0_pil = Image.open(io.BytesIO(image0_png_bytes))
         num_cameras = df.camera.max() + 1
-        # Determine number of images per row and column.
         grid_count = math.ceil(math.sqrt(num_cameras))
-        image_width = image0_pil.width + 1  # add 1 for margin between images
-        image_height = image0_pil.height + 1 # add 1 for margin between images
+        # Get first image to determine height, width.
+        # row0 = df.iloc[0]
+        # image0_png_bytes = row0['image']
+        # image0_pil = Image.open(io.BytesIO(image0_png_bytes))
+        # Determine number of images per row and column.
+        image_width = thumbnail_size[0]
+        image_height = thumbnail_size[1]
+        image_mode = 'RGB'
+        margin = 1
         # Create blank output image, white background.
-        out_pil = Image.new('RGB', (image_width * grid_count - 1, image_height * grid_count - 1), (255,255,255))
+        out_pil = Image.new('RGB', ((image_width + margin) * grid_count - margin, (image_height + margin) * grid_count - margin), (255,255,255))
         def add_image(r):
-            in_pil = Image.open(io.BytesIO(r['data']))
-            x = (r['camera'] % grid_count) * image_width
-            y = (r['camera'] // grid_count) * image_width
+            # in_pil = Image.open(io.BytesIO(r['image']))
+            in_pil = Image.frombytes(image_mode, (image_width, image_height), r['image'])
+            x = (r['camera'] % grid_count) * (image_width + margin)
+            y = (r['camera'] // grid_count) * (image_width + margin)
             out_pil.paste(in_pil, (x, y))
         df.apply(add_image, axis=1)
         out_bytesio = io.BytesIO()
-        out_pil.save(out_bytesio, format='PNG')
+        out_pil.save(out_bytesio, format='PNG', compress_level=0)
         out_bytes = out_bytesio.getvalue()
-        new_row = row0[['timestamp', 'frame_number']]
+        new_row = df.iloc[0][['timestamp', 'frame_number']]
         new_row['ssrc'] = 0
         new_row['data'] = out_bytes
         return pd.DataFrame([new_row])
@@ -122,6 +137,7 @@ def run(spark):
     df = grp.apply(combine_images_into_grid)
     # df = df.select('*', combine_thumbnails('cameras').alias('combined'))
     df = df.select(func.to_json(func.struct(df["frame_number"], df["data"])).alias("event"))
+    # df = df.sort('frame_number')
 
     df.printSchema()
 
@@ -139,7 +155,7 @@ def run(spark):
     else:
         (df
         .writeStream
-        .trigger(processingTime="200 milliseconds")
+        .trigger(processingTime="1000 milliseconds")
         .outputMode("append")
         .format("pravega")
         .option("controller", controller)

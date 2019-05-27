@@ -149,19 +149,19 @@ def main():
         '--num-cameras', default=4, type=int,
         action='store', dest='num_cameras', help='Number of cameras to simulate')
     parser.add_argument(
-        '--max-chunk-size', default=1024*1024, type=int,
+        '--max-chunk-size', default=11*1024, type=int,
         action='store', dest='max_chunk_size', help='Maximum size of chunk (bytes)')
     parser.add_argument(
         '--avg-data-size', default=20*1024, type=int,
         action='store', dest='avg_data_size', help='Average size of data (bytes)')
     parser.add_argument(
-        '--fps', default=5.0, type=float,
+        '--fps', default=1.0, type=float,
         action='store', dest='frames_per_sec', help='Number of frames per second per camera')
     parser.add_argument(
         '--checksum', default=False,
         action='store_true', dest='checksum', help='Prepend the data with a checksum that can be used to detect errors')
     parser.add_argument(
-        '--use-transactions', default=False,
+        '--use-transactions', default=True,
         action='store_true', dest='use_transactions', help='If true, use Pravega transactions')
     options, unparsed = parser.parse_known_args()
 
