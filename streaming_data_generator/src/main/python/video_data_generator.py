@@ -47,14 +47,19 @@ def pravega_chunker_v1(payload, max_chunk_size):
         yield (chunked_event, chunk_index, is_final_chunk)
 
 
-def build_image_bytes(num_bytes, camera, frame_number):
+def build_image_bytes(num_bytes, camera, frame_number, timestamp_ms):
+    timestamp_str = (datetime(1970, 1, 1) + timedelta(milliseconds=timestamp_ms)).strftime("%H:%M:%S.%f")[:-3]
     width = math.ceil(math.sqrt(num_bytes / 3))
     height = width
-    font_size = int(min(width, height) * 0.15)
+    font_size = int(min(width, height) * 0.13)
     img = Image.new('RGB', (width, height), (25, 25, 240, 0))
-    font = ImageFont.truetype('/usr/share/fonts/truetype/freefont/FreeSans.ttf', font_size)
+    font = ImageFont.truetype('/usr/share/fonts/truetype/freefont/FreeMonoBold.ttf', font_size)
     draw = ImageDraw.Draw(img)
-    draw.text((width//10, height//10), 'FRAME\n%05d\nCAMERA\n %03d' % (frame_number, camera), font=font, align='center')
+    draw.text(
+        (5, 5),
+        'CAMERA\n %04d\nFRAME\n%05d\n%s' % (camera, frame_number, timestamp_str),
+        font=font,
+        align='center')
     out_bytesio = io.BytesIO()
     img.save(out_bytesio, format='PNG', compress_level=0)
     out_bytes = out_bytesio.getvalue()
@@ -66,7 +71,7 @@ def data_generator(camera, ssrc, frames_per_sec, avg_data_size, include_checksum
     while True:
         timestamp = int(frame_number / (frames_per_sec / 1000.0) + t0_ms)
         num_bytes = avg_data_size
-        data = build_image_bytes(num_bytes, camera, frame_number)
+        data = build_image_bytes(num_bytes, camera, frame_number, timestamp)
         if frame_number == 0:
             with open('/tmp/camera%d-%d.png' % (camera, frame_number), 'wb') as f:
                 f.write(data)
@@ -81,32 +86,39 @@ def data_generator(camera, ssrc, frames_per_sec, avg_data_size, include_checksum
         frame_number += 1
 
 
-def encode_record(record: dict) -> bytes:
-    """Encode the record
+def prepare_encode_record(record: dict) -> dict:
+    """Convert record data types to JSON-serializable types.
     JSON is universally compatible but require images to be base64 encoded.
     For optimal performance, other encodings should be used such as Avro or Protobuf.
     """
     r = record.copy()
     r['data'] = base64.b64encode(record['data']).decode('utf-8')
-    encoded = json.dumps(r).encode('utf-8')
+    r['timestamp'] = (datetime(1970, 1, 1) + timedelta(milliseconds=r['timestamp'])).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + 'Z'
+    return r
+
+
+def encode_record(prepared_record: dict) -> bytes:
+    encoded = json.dumps(prepared_record).encode('utf-8')
     return encoded
 
 
-def pravega_request_generator(data_generator, scope, stream, max_chunk_size, use_transactions):
+def pravega_request_generator(data_generator, scope, stream, max_chunk_size, use_transactions, commit_period=8):
     for record in data_generator:
         t = record['timestamp']
+        prepared_record = prepare_encode_record(record)
+        payload = encode_record(prepared_record)
         sleep_sec = t/1000.0 - time()
         if sleep_sec > 0.0:
             sleep(sleep_sec)
-        record['timestamp'] = (datetime(1970, 1, 1) + timedelta(milliseconds=t)).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + 'Z'
-        payload = encode_record(record)
+        elif sleep_sec < -5.0:
+            logging.warn(f"Data generator can't keep up with real-time. sleep_sec={sleep_sec}")
         for (chunked_event, chunk_index, is_final_chunk) in pravega_chunker_v1(payload, max_chunk_size=max_chunk_size):
             request = pravega.pb.WriteEventsRequest(
                 event=chunked_event,
                 scope=scope,
                 stream=stream,
                 use_transaction=use_transactions,
-                commit=is_final_chunk and use_transactions,
+                commit=is_final_chunk and use_transactions and (record['frame_number'] % commit_period == 0),
                 )
             # logging.info(request)
             yield request
@@ -117,6 +129,7 @@ def pravega_request_generator(data_generator, scope, stream, max_chunk_size, use
             record_to_log['data_len'] = len(record['data'])
             record_to_log['payload_len'] = len(payload)
             record_to_log['final_chunk_index'] = chunk_index
+            record_to_log['timestamp'] = prepared_record['timestamp']
             logging.info('%d: %s' % (record_to_log['camera'], json.dumps(record_to_log)))
 
 
@@ -129,8 +142,7 @@ def single_generator_process(camera, frames_per_sec, max_chunk_size, avg_data_si
         pravega_client = pravega.grpc.PravegaGatewayStub(pravega_channel)
         pravega_client.CreateScope(pravega.pb.CreateScopeRequest(scope=scope))
         pravega_client.CreateStream(pravega.pb.CreateStreamRequest(scope=scope, stream=stream))
-        write_response = pravega_client.WriteEvents(pravega_request_iter)
-        logging.info("write_response=" + str(write_response))
+        pravega_client.WriteEvents(pravega_request_iter)
 
 
 def main():
@@ -155,7 +167,7 @@ def main():
         '--avg-data-size', default=20*1024, type=int,
         action='store', dest='avg_data_size', help='Average size of data (bytes)')
     parser.add_argument(
-        '--fps', default=1.0, type=float,
+        '--fps', default=2.0, type=float,
         action='store', dest='frames_per_sec', help='Number of frames per second per camera')
     parser.add_argument(
         '--checksum', default=False,

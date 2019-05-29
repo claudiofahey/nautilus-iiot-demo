@@ -26,9 +26,6 @@ def main():
 
 def run(spark):
     """
-    This demonstrates reading large images from Pravega and detecting defects.
-    The data field contains a base-64 encoded PNG image file.
-    It uses chunked encoding to support events of 2 GiB.
     """
     schema='timestamp timestamp, frame_number int, camera int, ssrc int, data binary'
 
@@ -57,10 +54,12 @@ def run(spark):
     df = df.select('*', from_json('event_string', schema=schema).alias('event'))
     df = df.select('*', 'event.*')
     df = df.select('*', length('data'))
-    df = df.withWatermark('timestamp', '1 second')
+    fps = 2.0
+    df = df.selectExpr('*', f'timestamp(floor(cast(timestamp as double) * {fps}) / {fps}) as discrete_timestamp')
+    df = df.withWatermark('discrete_timestamp', '15 second')
     df = df.drop('raw_event', 'event_string', 'event')
 
-    thumbnail_size = (80, 80)
+    thumbnail_size = (84, 84)
 
     @pandas_udf(returnType='binary', functionType=PandasUDFType.SCALAR)
     def decode_and_scale_image(data_series, ssrc):
@@ -72,38 +71,31 @@ def run(spark):
 
     df = df.select('*', decode_and_scale_image(df['data'], df['ssrc']).alias('image'))
 
+    df = df.repartition(1)
+
     grp = df.groupby(
             # window('timestamp', '1 second'),
-            'frame_number',
+            # 'frame_number',
+            'discrete_timestamp',
     )
-    #df = df.agg(func.collect_list(func.array(df['camera'], df['data'])).alias('cameras'))
 
-    # @pandas_udf(returnType='frame_number int, data binary', functionType=PandasUDFType.GROUPED_MAP)
-    # def combine_thumbnails(df):
-    #     """Input is a Pandas dataframe with 1 row per camera and frame.
-    #     Output should be a Pandas dataframe with 1 row per frame."""
-    #     print(f'combine_thumbnails: s={df}')
-    #     df.info(verbose=True)
-    #
-    #     return df[['frame_number', 'data']]
-
-    @pandas_udf(returnType='timestamp timestamp, frame_number int, ssrc int, data binary', functionType=PandasUDFType.GROUPED_MAP)
+    @pandas_udf(returnType='timestamp timestamp, frame_number int, ssrc int, data binary, source string', functionType=PandasUDFType.GROUPED_MAP)
     def combine_images_into_grid(df):
         if df.empty:
             return None
+        row0 = df.iloc[0]
         num_cameras = df.camera.max() + 1
         grid_count = math.ceil(math.sqrt(num_cameras))
-        # Get first image to determine height, width.
-        # row0 = df.iloc[0]
-        # image0_png_bytes = row0['image']
-        # image0_pil = Image.open(io.BytesIO(image0_png_bytes))
         # Determine number of images per row and column.
         image_width = thumbnail_size[0]
         image_height = thumbnail_size[1]
         image_mode = 'RGB'
         margin = 1
+        status_width = 150
         # Create blank output image, white background.
-        out_pil = Image.new('RGB', ((image_width + margin) * grid_count - margin, (image_height + margin) * grid_count - margin), (255,255,255))
+
+        out_pil = Image.new('RGB', ((image_width + margin) * grid_count - margin + status_width, (image_height + margin) * grid_count - margin), (128,128,128))
+        # Add images from each camera
         def add_image(r):
             # in_pil = Image.open(io.BytesIO(r['image']))
             in_pil = Image.frombytes(image_mode, (image_width, image_height), r['image'])
@@ -111,43 +103,40 @@ def run(spark):
             y = (r['camera'] // grid_count) * (image_width + margin)
             out_pil.paste(in_pil, (x, y))
         df.apply(add_image, axis=1)
+
+        # font = ImageFont.truetype('/usr/share/fonts/truetype/freefont/FreeSans.ttf', font_size)
+        # draw = ImageDraw.Draw(img)
+        # draw.text((status_width, 0), 'FRAME\n%05d\nCAMERA\n %03d' % (frame_number, camera), font=font, align='center')
+
         out_bytesio = io.BytesIO()
         out_pil.save(out_bytesio, format='PNG', compress_level=0)
         out_bytes = out_bytesio.getvalue()
-        new_row = df.iloc[0][['timestamp', 'frame_number']]
+
+        new_row = pd.Series()
+        new_row['timestamp'] = row0['discrete_timestamp']
         new_row['ssrc'] = 0
-        new_row['data'] = out_bytes
+        new_row['frame_number'] = 0
+        new_row['source'] = df[['camera', 'frame_number', 'timestamp']].to_json()
+        # new_row['data'] = out_bytes
+        new_row['data'] = b''
         return pd.DataFrame([new_row])
 
-    # @pandas_udf(returnType=DoubleType(), functionType=PandasUDFType.SCALAR)
-    # def combine_thumbnails(s):
-    #     print(f'combine_thumbnails: s={s}')
-    #     def f(data):
-    #         print('combine_thumbnails: data')
-    #         # # Decode the image.
-    #         # numpy_array = np.frombuffer(data, dtype='uint8')
-    #         # rgb = cv2.imdecode(numpy_array, -1)
-    #         # # Perform a computation on the image to determine the probability of a defect.
-    #         # # For now, we just calculate the mean pixel value.
-    #         # # We can use any Python library, including NumPy and TensorFlow.
-    #         # p = rgb.mean() / 255.0
-    #         return 3.14
-    #     return s.apply(f)
-
     df = grp.apply(combine_images_into_grid)
-    # df = df.select('*', combine_thumbnails('cameras').alias('combined'))
-    df = df.select(func.to_json(func.struct(df["frame_number"], df["data"])).alias("event"))
-    # df = df.sort('frame_number')
+    # df = df.select(func.to_json(func.struct(df["frame_number"], df["data"])).alias("event"))
+
+    # TODO: Output rows are written of timestamp order. How can this be fixed?
+    # Below gives error: Sorting is not supported on streaming DataFrames/Datasets, unless it is on aggregated DataFrame/Dataset in Complete output mode
+    #df = df.sortWithinPartitions(df['timestamp'])
 
     df.printSchema()
 
-    if False:
+    if True:
         (df
          .writeStream
-         .trigger(processingTime='3 seconds')    # limit trigger rate
+         # .trigger(processingTime='1000 milliseconds')    # limit trigger rate
          .outputMode('append')
          .format('console')
-         .option('truncate', 'true')
+         .option('truncate', 'false')
          .option('checkpointLocation', checkpoint_location)
          .start()
          .awaitTermination()
@@ -156,7 +145,8 @@ def run(spark):
         (df
         .writeStream
         .trigger(processingTime="1000 milliseconds")
-        .outputMode("append")
+        # .outputMode("append")
+         .outputMode("update")
         .format("pravega")
         .option("controller", controller)
         .option("scope", scope)
