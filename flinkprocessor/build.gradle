@@ -1,0 +1,68 @@
+plugins {
+    id "com.github.johnrengelman.shadow" version "1.2.4"
+}
+
+apply plugin: "java"
+apply plugin: "maven"
+apply plugin: "application"
+
+group = "io.pravega.example.iiotdemo"
+version = samplesVersion
+archivesBaseName = "iiotdemo-flinkprocessor"
+description = "iiotdemo-flinkprocessor"
+mainClassName = "io.pravega.example.iiotdemo.flinkprocessor.ApplicationMain"
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+    mavenLocal()
+    mavenCentral()
+    maven {
+        url "https://repository.apache.org/snapshots"
+    }
+    maven {
+        url "https://oss.sonatype.org/content/repositories/snapshots"
+    }
+}
+
+dependencies {
+    compile "org.slf4j:slf4j-api:1.6.6"
+    compile "ch.qos.logback:logback-classic:1.2.3"
+    compile "ch.qos.logback:logback-core:1.2.3"
+    compile "net.logstash.logback:logstash-logback-encoder:4.11"
+    compile "io.pravega:pravega-connectors-flink_2.11:${pravegaFlinkConnectorVersion}"
+    compile "org.apache.flink:flink-streaming-java_2.11:${flinkVersion}"
+    compile "org.apache.flink:flink-streaming-scala_2.11:${flinkVersion}"
+    compile "org.apache.flink:flink-ml_2.11:${flinkVersion}"
+    compile "org.apache.flink:flink-table_2.11:${flinkVersion}"
+    compile "io.pravega:pravega-client:${pravegaVersion}"
+
+    if (includePravegaCredentials.toBoolean()) {
+        compile "io.pravega:pravega-keycloak-credentials:${pravegaCredentialsVersion}"
+    }
+
+    testCompile "org.apache.flink:flink-test-utils_2.11:${flinkVersion}"
+    testCompile group: "junit", name: "junit", version: "4.11"
+}
+
+shadowJar {
+    dependencies {
+        exclude(dependency("org.scala-lang:scala-library"))
+        exclude(dependency("org.scala-lang:scala-reflect"))
+        exclude(dependency("org.scala-lang:scala-compiler"))
+    }
+
+    zip64 true
+}
+
+distributions {
+    main {
+        baseName = archivesBaseName
+        contents {
+            into("lib") {
+                from shadowJar
+                from(project.configurations.shadow)
+            }
+        }
+    }
+}

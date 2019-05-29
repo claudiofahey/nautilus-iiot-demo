@@ -47,6 +47,13 @@ def pravega_chunker_v1(payload, max_chunk_size):
         yield (chunked_event, chunk_index, is_final_chunk)
 
 
+def pravega_chunker_selector(payload, max_chunk_size, chunk_version):
+    if chunk_version == 1:
+        return pravega_chunker_v1(payload, max_chunk_size)
+    else:
+        return [(payload, 0, True)]
+
+
 def build_image_bytes(num_bytes, camera, frame_number, timestamp_ms):
     timestamp_str = (datetime(1970, 1, 1) + timedelta(milliseconds=timestamp_ms)).strftime("%H:%M:%S.%f")[:-3]
     width = math.ceil(math.sqrt(num_bytes / 3))
@@ -102,7 +109,7 @@ def encode_record(prepared_record: dict) -> bytes:
     return encoded
 
 
-def pravega_request_generator(data_generator, scope, stream, max_chunk_size, use_transactions, commit_period=8):
+def pravega_request_generator(data_generator, scope, stream, max_chunk_size, use_transactions, chunk_version, commit_period):
     for record in data_generator:
         t = record['timestamp']
         prepared_record = prepare_encode_record(record)
@@ -112,7 +119,7 @@ def pravega_request_generator(data_generator, scope, stream, max_chunk_size, use
             sleep(sleep_sec)
         elif sleep_sec < -5.0:
             logging.warn(f"Data generator can't keep up with real-time. sleep_sec={sleep_sec}")
-        for (chunked_event, chunk_index, is_final_chunk) in pravega_chunker_v1(payload, max_chunk_size=max_chunk_size):
+        for (chunked_event, chunk_index, is_final_chunk) in pravega_chunker_selector(payload, max_chunk_size=max_chunk_size, chunk_version=chunk_version):
             request = pravega.pb.WriteEventsRequest(
                 event=chunked_event,
                 scope=scope,
@@ -133,11 +140,11 @@ def pravega_request_generator(data_generator, scope, stream, max_chunk_size, use
             logging.info('%d: %s' % (record_to_log['camera'], json.dumps(record_to_log)))
 
 
-def single_generator_process(camera, frames_per_sec, max_chunk_size, avg_data_size, checksum, gateway, scope, stream, use_transactions):
+def single_generator_process(camera, frames_per_sec, max_chunk_size, avg_data_size, checksum, gateway, scope, stream, use_transactions, chunk_version, commit_period):
     t0_ms = int(time() * 1000)
     ssrc = np.random.randint(0, 2**31)
     data_iter = data_generator(camera, ssrc, frames_per_sec, avg_data_size, checksum, t0_ms)
-    pravega_request_iter = pravega_request_generator(data_iter, scope, stream, max_chunk_size, use_transactions)
+    pravega_request_iter = pravega_request_generator(data_iter, scope, stream, max_chunk_size, use_transactions, chunk_version, commit_period)
     with grpc.insecure_channel(gateway) as pravega_channel:
         pravega_client = pravega.grpc.PravegaGatewayStub(pravega_channel)
         pravega_client.CreateScope(pravega.pb.CreateScopeRequest(scope=scope))
@@ -155,16 +162,16 @@ def main():
         '--scope', default='examples',
         action='store', dest='scope', help='Pravega scope')
     parser.add_argument(
-        '--stream', default='video',
+        '--stream', default='unchunkedvideo',
         action='store', dest='stream', help='Pravega stream')
     parser.add_argument(
         '--num-cameras', default=4, type=int,
         action='store', dest='num_cameras', help='Number of cameras to simulate')
     parser.add_argument(
-        '--max-chunk-size', default=11*1024, type=int,
+        '--max-chunk-size', default=1024*1024, type=int,
         action='store', dest='max_chunk_size', help='Maximum size of chunk (bytes)')
     parser.add_argument(
-        '--avg-data-size', default=20*1024, type=int,
+        '--avg-data-size', default=1*1024, type=int,
         action='store', dest='avg_data_size', help='Average size of data (bytes)')
     parser.add_argument(
         '--fps', default=2.0, type=float,
@@ -175,6 +182,12 @@ def main():
     parser.add_argument(
         '--use-transactions', default=True,
         action='store_true', dest='use_transactions', help='If true, use Pravega transactions')
+    parser.add_argument(
+        '--chunk-version', default=0, type=int,
+        action='store', dest='chunk_version', help='0=no chunking, 1=use chunking')
+    parser.add_argument(
+        '--commit-period', default=8, type=int,
+        action='store', dest='commit_period', help='Transactions will be committed after this many frames')
     options, unparsed = parser.parse_known_args()
 
     cameras = [i for i in range(options.num_cameras)]
@@ -192,6 +205,8 @@ def main():
                     options.scope,
                     options.stream,
                     options.use_transactions,
+                    options.chunk_version,
+                    options.commit_period,
                 ))
             for camera in cameras]
         [p.start() for p in processes]
