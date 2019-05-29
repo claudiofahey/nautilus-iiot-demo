@@ -56,7 +56,7 @@ def run(spark):
     df = df.select('*', length('data'))
     fps = 2.0
     df = df.selectExpr('*', f'timestamp(floor(cast(timestamp as double) * {fps}) / {fps}) as discrete_timestamp')
-    df = df.withWatermark('discrete_timestamp', '15 second')
+    df = df.withWatermark('discrete_timestamp', '5 second')
     df = df.drop('raw_event', 'event_string', 'event')
 
     thumbnail_size = (84, 84)
@@ -70,17 +70,18 @@ def run(spark):
         return data_series.apply(f)
 
     df = df.select('*', decode_and_scale_image(df['data'], df['ssrc']).alias('image'))
+    df = df.select('*', func.to_json(func.struct(df['discrete_timestamp'], df['frame_number'], df['camera'])).alias('json'))
 
     df = df.repartition(1)
 
     grp = df.groupby(
             # window('timestamp', '1 second'),
-            # 'frame_number',
             'discrete_timestamp',
     )
 
     @pandas_udf(returnType='timestamp timestamp, frame_number int, ssrc int, data binary, source string', functionType=PandasUDFType.GROUPED_MAP)
     def combine_images_into_grid(df):
+        # TODO: This Pandas UDF provides incorrect results because it is called before the aggregation is finalized by the watermark.
         if df.empty:
             return None
         row0 = df.iloc[0]
@@ -91,7 +92,7 @@ def run(spark):
         image_height = thumbnail_size[1]
         image_mode = 'RGB'
         margin = 1
-        status_width = 150
+        status_width = 0
         # Create blank output image, white background.
 
         out_pil = Image.new('RGB', ((image_width + margin) * grid_count - margin + status_width, (image_height + margin) * grid_count - margin), (128,128,128))
@@ -117,20 +118,34 @@ def run(spark):
         new_row['ssrc'] = 0
         new_row['frame_number'] = 0
         new_row['source'] = df[['camera', 'frame_number', 'timestamp']].to_json()
-        # new_row['data'] = out_bytes
-        new_row['data'] = b''
+        new_row['data'] = out_bytes
+        # new_row['data'] = b''
         return pd.DataFrame([new_row])
 
-    df = grp.apply(combine_images_into_grid)
-    # df = df.select(func.to_json(func.struct(df["frame_number"], df["data"])).alias("event"))
+    # @pandas_udf(returnType='string', functionType=PandasUDFType.SCALAR)
+    # def combine_images_into_grid2(json):
+    #     # TODO
+    #     def f(data):
+    #         in_pil = Image.open(io.BytesIO(data))
+    #         out_pil = in_pil.resize(thumbnail_size)
+    #         return out_pil.tobytes()
+    #     return data_series.apply(f)
 
-    # TODO: Output rows are written of timestamp order. How can this be fixed?
+    df = grp.apply(combine_images_into_grid)
+    df = df.select(func.to_json(func.struct(df["frame_number"], df["data"])).alias("event"))
+
+    # df = grp.agg(func.collect_list('json'))
+    # df = df.selectExpr('*', '0 as ssrc')
+    # window = Window.partitionBy('ssrc').orderBy('discrete_timestamp').rowsBetween(Window.unboundedPreceding, Window.currentRow)
+    # df = df.select('*', func.row_number().over(window))
+
+    # TODO: Output rows are not written in timestamp order. How can this be fixed?
     # Below gives error: Sorting is not supported on streaming DataFrames/Datasets, unless it is on aggregated DataFrame/Dataset in Complete output mode
-    #df = df.sortWithinPartitions(df['timestamp'])
+    # df = df.sortWithinPartitions(df['discrete_timestamp'])
 
     df.printSchema()
 
-    if True:
+    if False:
         (df
          .writeStream
          # .trigger(processingTime='1000 milliseconds')    # limit trigger rate
@@ -145,8 +160,7 @@ def run(spark):
         (df
         .writeStream
         .trigger(processingTime="1000 milliseconds")
-        # .outputMode("append")
-         .outputMode("update")
+        .outputMode("append")
         .format("pravega")
         .option("controller", controller)
         .option("scope", scope)
