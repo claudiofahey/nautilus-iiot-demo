@@ -26,6 +26,9 @@ def main():
 
 def run(spark):
     """
+    This is an attempt at combining multiple video sources into a grid of images.
+    WARNING: This is broken because Spark is not maintaining the time order of the images.
+    This file has been superceded by the Flink/Java class MultiVideoGridJob in the flinkprocessor directory.
     """
     schema='timestamp timestamp, frame_number int, camera int, ssrc int, data binary'
 

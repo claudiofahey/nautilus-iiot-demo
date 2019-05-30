@@ -1,6 +1,7 @@
 package io.pravega.example.iiotdemo.flinkprocessor;
 
 import io.pravega.client.stream.StreamCut;
+import io.pravega.connectors.flink.FlinkPravegaJsonTableSink;
 import io.pravega.connectors.flink.FlinkPravegaJsonTableSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.table.api.Table;
@@ -19,8 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 public class MultiVideoGridJob extends AbstractJob {
     private static Logger log = LoggerFactory.getLogger(MultiVideoGridJob.class);
@@ -36,6 +35,7 @@ public class MultiVideoGridJob extends AbstractJob {
             StreamExecutionEnvironment env = initializeFlinkStreaming();
             StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
             createStream(appConfiguration.getInputStreamConfig());
+            createStream(appConfiguration.getOutputStreamConfig());
             StreamCut tailStreamCut = getStreamInfo(appConfiguration.getInputStreamConfig().stream).getTailStreamCut();
 //            StreamCut tailStreamCut = StreamCut.UNBOUNDED;
             TableSchema inputSchema = TableSchema.builder()
@@ -43,7 +43,7 @@ public class MultiVideoGridJob extends AbstractJob {
                     .field("frame_number", Types.INT())
                     .field("camera", Types.INT())
                     .field("ssrc", Types.INT())
-                    .field("data", Types.PRIMITIVE_ARRAY(Types.BYTE()))
+                    .field("data", Types.PRIMITIVE_ARRAY(Types.BYTE()))     // PNG file bytes
                     .build();
             FlinkPravegaJsonTableSource source = FlinkPravegaJsonTableSource.builder()
                     .forStream(appConfiguration.getInputStreamConfig().stream, tailStreamCut, StreamCut.UNBOUNDED)
@@ -56,21 +56,34 @@ public class MultiVideoGridJob extends AbstractJob {
             Table t1 = tableEnv.scan("video");
             t1.printSchema();
 
-            tableEnv.registerFunction("ImageResizer", new ImageResizer());
-            tableEnv.registerFunction("ImageAggregator", new ImageAggregator());
+            int imageWidth = 100;
+            int imageHeight = 100;
+            tableEnv.registerFunction("ImageResizer", new ImageResizerUDF(imageWidth, imageHeight));
+            tableEnv.registerFunction("ImageAggregator", new ImageAggregator(imageWidth, imageHeight));
 
+            // Resize all input images.
             Table t2 = t1.select("timestamp, camera, ImageResizer(data) as data");
             t2.printSchema();
 
+            // Aggregate resized images.
+            // For each 100 millisecond window, we take the last image from each camera.
+            // Then these images are combined in a square grid.
             Table t3 = t2
                     .window(Tumble.over("100.millis").on("timestamp").as("w"))
                     .groupBy("w")
-                    .select("w.start, w.end, ImageAggregator(camera, data) as data");
+                    .select("w.end as timestamp, 0 as camera, 0 as frame_number, 0 as ssrc, '' as routing_key" +
+                            ", ImageAggregator(camera, data) as data");
             t3.printSchema();
 
-            tableEnv.toAppendStream(t3, Row.class).printToErr();
+//            tableEnv.toAppendStream(t3, Row.class).printToErr();
 
-            // TODO: write output to new Pravega stream
+            // Write output to new Pravega stream
+            FlinkPravegaJsonTableSink sink = FlinkPravegaJsonTableSink.builder()
+                    .forStream(appConfiguration.getOutputStreamConfig().stream)
+                    .withPravegaConfig(appConfiguration.getPravegaConfig())
+                    .withRoutingKeyField("routing_key")
+                    .build();
+            t3.writeToSink(sink);
 
             log.info("Executing {} job", jobName);
             env.execute();
@@ -79,10 +92,18 @@ public class MultiVideoGridJob extends AbstractJob {
         }
     }
 
-    public static class ImageResizer extends ScalarFunction {
+    public static class ImageResizerUDF extends ScalarFunction {
+        private final int imageWidth;
+        private final int imageHeight;
+
+        public ImageResizerUDF(int imageWidth, int imageHeight) {
+            this.imageWidth = imageWidth;
+            this.imageHeight = imageHeight;
+        }
+
         public byte[] eval(byte[] image) {
-            // TODO: resize image
-            return image;
+            ImageResizer resizer = new ImageResizer(imageWidth, imageHeight);
+            return resizer.resize(image);
         }
     }
 
@@ -91,18 +112,26 @@ public class MultiVideoGridJob extends AbstractJob {
         public Map<Integer, byte[]> images = new HashMap<>();
     }
 
-    public static class ImageAggregator extends AggregateFunction<String, ImageAggregatorAccum> {
+    public static class ImageAggregator extends AggregateFunction<byte[], ImageAggregatorAccum> {
+
+        private final int imageWidth;
+        private final int imageHeight;
+
+        public ImageAggregator(int imageWidth, int imageHeight) {
+            this.imageWidth = imageWidth;
+            this.imageHeight = imageHeight;
+        }
+
         @Override
         public ImageAggregatorAccum createAccumulator() {
             return new ImageAggregatorAccum();
         }
 
         @Override
-        public String getValue(ImageAggregatorAccum accum) {
-            // TODO: combine images
-            return StreamSupport.stream(accum.images.keySet().spliterator(), false)
-                    .map(Object::toString)
-                    .collect(Collectors.joining("+"));
+        public byte[] getValue(ImageAggregatorAccum accum) {
+            ImageGridBuilder builder = new ImageGridBuilder(imageWidth, imageHeight, accum.images.size());
+            builder.addImages(accum.images);
+            return builder.getOutputImageBytes("png");
         }
 
         public void accumulate(ImageAggregatorAccum accum, int camera, byte[] data) {
