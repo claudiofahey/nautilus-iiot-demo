@@ -22,4 +22,4 @@ docker build -f Dockerfile ${ROOT_DIR} \
 --build-arg SOURCE_TAG=${SOURCE_TAG} \
 --tag ${TARGET_IMAGE}:${TARGET_TAG}
 
-#docker push ${TARGET_IMAGE}:${TARGET_TAG}
+docker push ${TARGET_IMAGE}:${TARGET_TAG}

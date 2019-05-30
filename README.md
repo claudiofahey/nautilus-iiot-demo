@@ -198,10 +198,11 @@ Run the Pravega Gateway.
 
 See [Pravega Gateway](pravega-gateway/README.md) for more information.
 
-### Run the Data Generator
+### Run the Data Generators
 
 This will run Python applications that generate synthetic data and writes it to Pravega
-via the Pravega Gateway.
+via the Pravega Gateway. You may run any number of these and use a variety of options.
+Run with the `--help` option.
 
 ```
 cd streaming_data_generator
@@ -210,7 +211,39 @@ cd streaming_data_generator
 ./video_data_generator.sh
 ```
 
-### Run the Video and Sensor Processors
+### Run the Flink Multi Video Grid Job.
+
+This will run a streaming Flink job that reads all video streams and combines them into a single video stream
+where each image is composed of the input images in a square grid.
+
+Run the Flink app in `flinkprocessor` with the following parameters:
+```
+--jobClass
+io.pravega.example.iiotdemo.flinkprocessor.MultiVideoGridJob
+--controller
+tcp://127.0.0.1:9090
+--input-stream
+examples/unchunkedvideo
+--output-stream
+examples/unchunkedcombinedvideo
+```
+
+### View Live Video in Jupyter Notebook
+
+```
+cd jupyterhub
+export DOCKER_REPOSITORY=<hostname>:<port>/<namespace>
+./build.sh
+docker-compose up
+```
+
+Review the log produced above to find the Jupyter login token. You will need that to login to Jupyter.
+
+Open your browser to <http://localhost:8888/notebooks/notebooks/test_play_video_from_pravega.ipynb>.
+Click Kernel -> Restart and Run All.
+Live (generated) video should begin to play.
+
+### Run the Spark Video and Sensor Processors
 
 This will run a Python Spark application that reads the generated data. 
 
