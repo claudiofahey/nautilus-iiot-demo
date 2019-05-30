@@ -1,8 +1,11 @@
 package io.pravega.example.iiotdemo.flinkprocessor;
 
+import io.pravega.client.admin.StreamInfo;
 import io.pravega.client.admin.StreamManager;
 import io.pravega.client.stream.ScalingPolicy;
+import io.pravega.client.stream.Stream;
 import io.pravega.client.stream.StreamConfiguration;
+import io.pravega.client.stream.StreamCut;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.runtime.state.filesystem.FsStateBackend;
 import org.apache.flink.runtime.state.memory.MemoryStateBackend;
@@ -30,6 +33,12 @@ public abstract class AbstractJob implements Runnable {
                     .scalingPolicy(ScalingPolicy.byDataRate(streamConfig.targetRate, streamConfig.scaleFactor, streamConfig.minNumSegments))
                     .build();
             streamManager.createStream(streamConfig.stream.getScope(), streamConfig.stream.getStreamName(), streamConfiguration);
+        }
+    }
+
+    public StreamInfo getStreamInfo(Stream stream) {
+        try(StreamManager streamManager = StreamManager.create(appConfiguration.getPravegaConfig().getClientConfig())) {
+            return streamManager.getStreamInfo(stream.getScope(), stream.getStreamName());
         }
     }
 

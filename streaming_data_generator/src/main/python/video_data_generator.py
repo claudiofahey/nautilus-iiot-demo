@@ -148,7 +148,8 @@ def single_generator_process(camera, frames_per_sec, max_chunk_size, avg_data_si
     with grpc.insecure_channel(gateway) as pravega_channel:
         pravega_client = pravega.grpc.PravegaGatewayStub(pravega_channel)
         pravega_client.CreateScope(pravega.pb.CreateScopeRequest(scope=scope))
-        pravega_client.CreateStream(pravega.pb.CreateStreamRequest(scope=scope, stream=stream))
+        scaling_policy = pravega.pb.ScalingPolicy(min_num_segments=2)
+        pravega_client.CreateStream(pravega.pb.CreateStreamRequest(scope=scope, stream=stream, scaling_policy=scaling_policy))
         pravega_client.WriteEvents(pravega_request_iter)
 
 
@@ -180,7 +181,7 @@ def main():
         '--checksum', default=False,
         action='store_true', dest='checksum', help='Prepend the data with a checksum that can be used to detect errors')
     parser.add_argument(
-        '--use-transactions', default=True,
+        '--use-transactions', default=False,
         action='store_true', dest='use_transactions', help='If true, use Pravega transactions')
     parser.add_argument(
         '--chunk-version', default=0, type=int,
