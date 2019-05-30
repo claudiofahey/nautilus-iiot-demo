@@ -178,7 +178,7 @@ By default, the Spark applications will use an in-process Spark cluster.
 You can also start a Spark cluster using the following command.
 
 ```
-`~/spark/current/sbin/start-all.sh
+~/spark/current/sbin/start-all.sh
 ```
 
 Confirm that you can browse to the Spark Master UI at http://localhost:8080/.
