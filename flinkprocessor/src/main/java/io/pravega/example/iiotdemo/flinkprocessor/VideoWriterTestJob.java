@@ -1,5 +1,7 @@
 package io.pravega.example.iiotdemo.flinkprocessor;
 
+import io.pravega.connectors.flink.FlinkPravegaReader;
+import io.pravega.connectors.flink.FlinkPravegaWriter;
 import io.pravega.connectors.flink.Pravega;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.java.tuple.Tuple8;
@@ -16,7 +18,10 @@ import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.ByteBuffer;
 import java.sql.Timestamp;
+
+import static java.lang.Math.min;
 
 public class VideoWriterTestJob extends AbstractJob {
     private static Logger log = LoggerFactory.getLogger(VideoWriterTestJob.class);
@@ -33,44 +38,49 @@ public class VideoWriterTestJob extends AbstractJob {
             createStream(appConfiguration.getOutputStreamConfig());
 
             DataStream<Integer> ds1 = env.fromElements(0, 1, 2, 3);
-            DataStream<Tuple8<String, Integer, Integer, Timestamp, Integer, byte[], Short, Short>> ds2 =
-                    ds1.flatMap(new FlatMapFunction<Integer, Tuple8<String, Integer, Integer, Timestamp, Integer, byte[], Short, Short>>() {
-                @Override
-                public void flatMap(Integer frameNumber, Collector<Tuple8<String, Integer, Integer, Timestamp, Integer, byte[], Short, Short>> out) throws Exception {
-                    Integer camera = 0;
-                    Integer ssrc = 0;
-                    String routingKey = String.format("%d-%d", camera, ssrc);
-                    Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                    out.collect(new Tuple8<>(routingKey, camera, ssrc, timestamp, frameNumber, new byte[]{0, 1}, (short) 0, (short) 1));
-                    out.collect(new Tuple8<>(routingKey, camera, ssrc, timestamp, frameNumber, new byte[]{2, 3}, (short) 1, (short) 1));
-                }
-            });
-//            ds2.printToErr();
 
-            Table t1 = tableEnv.fromDataStream(ds2, "routingKey, camera, ssrc, timestamp, frameNumber, data, chunkIndex, finalChunkIndex");
-            tableEnv.toAppendStream(t1, Row.class).printToErr();
+            DataStream<VideoFrame> ds2 =
+                    ds1.flatMap(new FlatMapFunction<Integer, VideoFrame>() {
+                        @Override
+                        public void flatMap(Integer frameNumber, Collector<VideoFrame> out) {
+                            VideoFrame frame = new VideoFrame();
+                            frame.camera = 0;
+                            frame.ssrc = 0;
+                            frame.timestamp = new Timestamp(System.currentTimeMillis());
+                            frame.frameNumber = frameNumber;
+                            frame.data = ByteBuffer.wrap(new byte[]{0, 1, 2, 3});
+                            out.collect(frame);
+                        }
+                    });
 
-            Schema schema = new Schema()
-                    .field("routingKey", Types.STRING())
-                    .field("camera", Types.INT())
-                    .field("ssrc", Types.INT())
-                    .field("timestamp", Types.SQL_TIMESTAMP())
-                    .field("frameNumber", Types.INT())
-                    .field("data", Types.PRIMITIVE_ARRAY(Types.BYTE()))
-                    .field("chunkIndex", Types.SHORT())
-                    .field("finalChunkIndex", Types.SHORT());
-            Pravega pravega = new Pravega();
-            pravega.tableSinkWriterBuilder()
-                    .withRoutingKeyField("routingKey")
+            ds2.printToErr();
+
+            int chunkSizeBytes = 3;
+
+            DataStream<ChunkedVideoFrame> ds3 =
+                    ds2.flatMap(new FlatMapFunction<VideoFrame, ChunkedVideoFrame>() {
+                        @Override
+                        public void flatMap(VideoFrame in, Collector<ChunkedVideoFrame> out) {
+                            int numChunks = (in.data.remaining() - 1) / chunkSizeBytes + 1;
+                            for (int chunkIndex = 0 ; chunkIndex < numChunks ; chunkIndex++) {
+                                ChunkedVideoFrame frame = new ChunkedVideoFrame(in);
+                                frame.data.position(in.data.position() + chunkIndex * chunkSizeBytes);
+                                frame.data.limit(in.data.position() + min((chunkIndex + 1) * chunkSizeBytes, in.data.remaining()));
+                                frame.chunkIndex = (short) chunkIndex;
+                                frame.finalChunkIndex = (short) (numChunks - 1);
+                            out.collect(frame);
+                            }
+                        }
+                    });
+            ds3.printToErr();
+
+            FlinkPravegaWriter<ChunkedVideoFrame> flinkPravegaWriter = FlinkPravegaWriter.<ChunkedVideoFrame>builder()
                     .withPravegaConfig(appConfiguration.getPravegaConfig())
-                    .forStream(appConfiguration.getOutputStreamConfig().stream);
-            tableEnv
-                    .connect(pravega)
-                    .withFormat(new Json().failOnMissingField(false).deriveSchema())
-                    .withSchema(schema)
-                    .inAppendMode()
-                    .registerTableSink("stream1");
-            t1.insertInto("stream1");
+                    .forStream(appConfiguration.getOutputStreamConfig().stream)
+                    .withSerializationSchema(new ChunkedVideoFrameSerializationSchema())
+                    .withEventRouter(frame -> String.format("%d-%d", frame.camera, frame.ssrc))
+                    .build();
+            ds3.addSink(flinkPravegaWriter);
 
             log.info("Executing {} job", jobName);
             env.execute();
