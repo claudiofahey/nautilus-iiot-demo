@@ -20,11 +20,12 @@ public class ChunkedVideoFrame extends VideoFrame {
     public String toString() {
         return "ChunkedVideoFrame{" +
 //                "routingKey='" + routingKey + '\'' +
-                "camera=" + camera +
-                ", ssrc=" + ssrc +
-                ", timestamp=" + timestamp +
-                ", frameNumber=" + frameNumber +
-                ", data='" + data + '\'' +
+                super.toString() +
+//                ", camera=" + camera +
+//                ", ssrc=" + ssrc +
+//                ", timestamp=" + timestamp +
+//                ", frameNumber=" + frameNumber +
+//                ", data='" + data + '\'' +
                 ", chunkIndex=" + chunkIndex +
                 ", finalChunkIndex=" + finalChunkIndex +
                 '}';

@@ -13,15 +13,18 @@ public class ChunkedVideoFrameProcessWindowFunction extends ProcessWindowFunctio
     @Override
     public void process(Tuple key, Context context, Iterable<ChunkedVideoFrame> elements, Collector<VideoFrame> out) throws Exception {
         // TODO: Ensure that all chunks are present and place in the correct order.
-//        int totalSize = StreamSupport.stream(elements.spliterator(), false).mapToInt((e) -> e.data.remaining()).sum();
-//        ByteBuffer output = ByteBuffer.allocate(totalSize);
+        int totalSize = StreamSupport.stream(elements.spliterator(), false).mapToInt((e) -> e.data.remaining()).sum();
+        ChunkedVideoFrame firstChunk = elements.iterator().next();
         VideoFrame videoFrame = new VideoFrame();
+        videoFrame.camera = firstChunk.camera;
+        videoFrame.ssrc = firstChunk.ssrc;
+        videoFrame.timestamp = firstChunk.timestamp;
+        videoFrame.frameNumber = firstChunk.frameNumber;
+        videoFrame.data = ByteBuffer.allocate(totalSize);
         for (ChunkedVideoFrame chunk: elements) {
-            videoFrame.frameNumber = chunk.frameNumber;
-            out.collect(videoFrame);
-            break;
+            videoFrame.data.put(chunk.data);
         }
-//        output.flip();
-//        out.collect(output);
+        videoFrame.data.flip();
+        out.collect(videoFrame);
     }
 }

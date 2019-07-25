@@ -35,16 +35,16 @@ public class LargeEventWriterTestJob extends AbstractJob {
             createStream(appConfiguration.getOutputStreamConfig());
 
             DataStream<Integer> ds1 = env.fromElements(0, 1, 2, 3);
-            DataStream<Tuple8<String, Integer, Integer, Timestamp, Integer, String, Short, Short>> ds2 =
-                    ds1.flatMap(new FlatMapFunction<Integer, Tuple8<String, Integer, Integer, Timestamp, Integer, String, Short, Short>>() {
+            DataStream<Tuple8<String, Integer, Integer, Timestamp, Integer, byte[], Short, Short>> ds2 =
+                    ds1.flatMap(new FlatMapFunction<Integer, Tuple8<String, Integer, Integer, Timestamp, Integer, byte[], Short, Short>>() {
                 @Override
-                public void flatMap(Integer frameNumber, Collector<Tuple8<String, Integer, Integer, Timestamp, Integer, String, Short, Short>> out) throws Exception {
+                public void flatMap(Integer frameNumber, Collector<Tuple8<String, Integer, Integer, Timestamp, Integer, byte[], Short, Short>> out) throws Exception {
                     Integer camera = 0;
                     Integer ssrc = 0;
                     String routingKey = String.format("%d-%d", camera, ssrc);
                     Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-                    out.collect(new Tuple8<>(routingKey, camera, ssrc, timestamp, frameNumber, "aa", (short) 0, (short) 1));
-                    out.collect(new Tuple8<>(routingKey, camera, ssrc, timestamp, frameNumber, "bb", (short) 1, (short) 1));
+                    out.collect(new Tuple8<>(routingKey, camera, ssrc, timestamp, frameNumber, new byte[]{0, 1}, (short) 0, (short) 1));
+                    out.collect(new Tuple8<>(routingKey, camera, ssrc, timestamp, frameNumber, new byte[]{2, 3}, (short) 1, (short) 1));
                 }
             });
 //            ds2.printToErr();
@@ -58,7 +58,7 @@ public class LargeEventWriterTestJob extends AbstractJob {
                     .field("ssrc", Types.INT())
                     .field("timestamp", Types.SQL_TIMESTAMP())
                     .field("frameNumber", Types.INT())
-                    .field("data", Types.STRING())
+                    .field("data", Types.PRIMITIVE_ARRAY(Types.BYTE()))
                     .field("chunkIndex", Types.SHORT())
                     .field("finalChunkIndex", Types.SHORT());
             Pravega pravega = new Pravega();

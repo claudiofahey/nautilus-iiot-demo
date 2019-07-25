@@ -1,13 +1,15 @@
 package io.pravega.example.iiotdemo.flinkprocessor;
 
+import java.nio.ByteBuffer;
 import java.sql.Timestamp;
+import java.util.Arrays;
 
 public class VideoFrame {
     public int camera;
     public int ssrc;
     public Timestamp timestamp;
     public int frameNumber;
-    public String data;
+    public ByteBuffer data;
 
     public VideoFrame() {
     }
@@ -19,7 +21,7 @@ public class VideoFrame {
                 ", ssrc=" + ssrc +
                 ", timestamp=" + timestamp +
                 ", frameNumber=" + frameNumber +
-                ", data='" + data + '\'' +
+                ", data='" + Arrays.toString(data.array()) + '\'' +
                 '}';
     }
 }
