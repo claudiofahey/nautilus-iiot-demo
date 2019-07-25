@@ -14,16 +14,16 @@ import org.apache.flink.table.api.java.StreamTableEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class LargeEventReassemblyTest3Job extends AbstractJob {
-    private static Logger log = LoggerFactory.getLogger(LargeEventReassemblyTest3Job.class);
+public class VideoReaderTestJob extends AbstractJob {
+    private static Logger log = LoggerFactory.getLogger(VideoReaderTestJob.class);
 
-    public LargeEventReassemblyTest3Job(AppConfiguration appConfiguration) {
+    public VideoReaderTestJob(AppConfiguration appConfiguration) {
         super(appConfiguration);
     }
 
     public void run() {
         try {
-            final String jobName = LargeEventReassemblyTest3Job.class.getName();
+            final String jobName = VideoReaderTestJob.class.getName();
             StreamExecutionEnvironment env = initializeFlinkStreaming();
             StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
             createStream(appConfiguration.getInputStreamConfig());

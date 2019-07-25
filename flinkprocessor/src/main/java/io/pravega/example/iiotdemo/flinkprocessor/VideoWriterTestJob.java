@@ -2,8 +2,6 @@ package io.pravega.example.iiotdemo.flinkprocessor;
 
 import io.pravega.connectors.flink.Pravega;
 import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.java.tuple.Tuple5;
-import org.apache.flink.api.java.tuple.Tuple6;
 import org.apache.flink.api.java.tuple.Tuple8;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -20,16 +18,16 @@ import org.slf4j.LoggerFactory;
 
 import java.sql.Timestamp;
 
-public class LargeEventWriterTestJob extends AbstractJob {
-    private static Logger log = LoggerFactory.getLogger(LargeEventWriterTestJob.class);
+public class VideoWriterTestJob extends AbstractJob {
+    private static Logger log = LoggerFactory.getLogger(VideoWriterTestJob.class);
 
-    public LargeEventWriterTestJob(AppConfiguration appConfiguration) {
+    public VideoWriterTestJob(AppConfiguration appConfiguration) {
         super(appConfiguration);
     }
 
     public void run() {
         try {
-            final String jobName = LargeEventWriterTestJob.class.getName();
+            final String jobName = VideoWriterTestJob.class.getName();
             StreamExecutionEnvironment env = initializeFlinkStreaming();
             StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
             createStream(appConfiguration.getOutputStreamConfig());
