@@ -4,9 +4,9 @@ import org.apache.flink.streaming.api.windowing.triggers.Trigger;
 import org.apache.flink.streaming.api.windowing.triggers.TriggerResult;
 import org.apache.flink.streaming.api.windowing.windows.Window;
 
-public class ChunkedEventTrigger extends Trigger<ChunkedEvent, Window> {
+public class ChunkedVideoFrameTrigger extends Trigger<ChunkedVideoFrame, Window> {
     @Override
-    public TriggerResult onElement(ChunkedEvent element, long timestamp, Window window, TriggerContext ctx) throws Exception {
+    public TriggerResult onElement(ChunkedVideoFrame element, long timestamp, Window window, TriggerContext ctx) throws Exception {
         // TODO: This assumes final chunk is last. Is ordering of chunks guaranteed?
         if (element.chunkIndex == element.finalChunkIndex)
             return TriggerResult.FIRE_AND_PURGE;

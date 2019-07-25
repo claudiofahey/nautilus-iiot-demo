@@ -81,9 +81,9 @@ public class AppConfiguration {
 
         public StreamConfig(PravegaConfig pravegaConfig, String argPrefix, ParameterTool params) {
             stream = pravegaConfig.resolve(params.get(argPrefix + "stream", "default"));
-            targetRate = params.getInt(argPrefix + "targetRate", 100000);  // Data rate in KB/sec
+            targetRate = params.getInt(argPrefix + "targetRate", 100000);  // data rate in KB/sec
             scaleFactor = params.getInt(argPrefix + "scaleFactor", 2);
-            minNumSegments = params.getInt(argPrefix + "minNumSegments", 12);
+            minNumSegments = params.getInt(argPrefix + "minNumSegments", 1);
         }
     }
 }

@@ -13,10 +13,10 @@ public class ChunkedEventProcessWindowFunction extends ProcessWindowFunction<Chu
     @Override
     public void process(Tuple key, Context context, Iterable<ChunkedEvent> elements, Collector<ByteBuffer> out) throws Exception {
         // TODO: Ensure that all chunks are present and place in the correct order.
-        int totalSize = StreamSupport.stream(elements.spliterator(), false).mapToInt((e) -> e.Data.remaining()).sum();
+        int totalSize = StreamSupport.stream(elements.spliterator(), false).mapToInt((e) -> e.data.remaining()).sum();
         ByteBuffer output = ByteBuffer.allocate(totalSize);
         for (ChunkedEvent chunk: elements) {
-            output.put(chunk.Data);
+            output.put(chunk.data);
         }
         output.flip();
         out.collect(output);

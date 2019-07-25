@@ -46,7 +46,7 @@ public class LargeEventReassemblyTestJob extends AbstractJob {
             );
             //ds1.printToErr();
 
-            KeyedStream<ChunkedEvent, Tuple> ds2 = ds1.keyBy("EventUUID");
+            KeyedStream<ChunkedEvent, Tuple> ds2 = ds1.keyBy("eventUUID");
             ds2.printToErr();
 
             WindowedStream<ChunkedEvent, Tuple, TimeWindow> ds3 = ds2.window(ProcessingTimeSessionWindows.withGap(Time.seconds(10)));
