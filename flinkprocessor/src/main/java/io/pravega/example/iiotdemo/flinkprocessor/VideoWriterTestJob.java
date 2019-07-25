@@ -1,19 +1,9 @@
 package io.pravega.example.iiotdemo.flinkprocessor;
 
-import io.pravega.connectors.flink.FlinkPravegaReader;
 import io.pravega.connectors.flink.FlinkPravegaWriter;
-import io.pravega.connectors.flink.Pravega;
 import org.apache.flink.api.common.functions.FlatMapFunction;
-import org.apache.flink.api.java.tuple.Tuple8;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.table.api.Table;
-import org.apache.flink.table.api.TableEnvironment;
-import org.apache.flink.table.api.Types;
-import org.apache.flink.table.api.java.StreamTableEnvironment;
-import org.apache.flink.table.descriptors.Json;
-import org.apache.flink.table.descriptors.Schema;
-import org.apache.flink.types.Row;
 import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,31 +24,36 @@ public class VideoWriterTestJob extends AbstractJob {
         try {
             final String jobName = VideoWriterTestJob.class.getName();
             StreamExecutionEnvironment env = initializeFlinkStreaming();
-            StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
             createStream(appConfiguration.getOutputStreamConfig());
 
-            DataStream<Integer> ds1 = env.fromElements(0, 1, 2, 3);
+            // Generate a stream of sequential frame numbers.
+            DataStream<Integer> frameNumbers = env.fromElements(0, 1, 2, 3);
 
-            DataStream<VideoFrame> ds2 =
-                    ds1.flatMap(new FlatMapFunction<Integer, VideoFrame>() {
+            // Generate a stream of video frames.
+            int width = 10;
+            int height = width;
+            int[] cameras = new int[]{10, 20};
+            DataStream<VideoFrame> videoFrames =
+                    frameNumbers.flatMap(new FlatMapFunction<Integer, VideoFrame>() {
                         @Override
                         public void flatMap(Integer frameNumber, Collector<VideoFrame> out) {
-                            VideoFrame frame = new VideoFrame();
-                            frame.camera = 0;
-                            frame.ssrc = 0;
-                            frame.timestamp = new Timestamp(System.currentTimeMillis());
-                            frame.frameNumber = frameNumber;
-                            frame.data = ByteBuffer.wrap(new byte[]{0, 1, 2, 3});
-                            out.collect(frame);
+                            for (int camera: cameras) {
+                                VideoFrame frame = new VideoFrame();
+                                frame.camera = camera;
+                                frame.ssrc = 0;
+                                frame.timestamp = new Timestamp(System.currentTimeMillis());
+                                frame.frameNumber = frameNumber;
+                                frame.data = ByteBuffer.wrap(new ImageGenerator(width, height).generate(frame.camera, frame.frameNumber));
+                                out.collect(frame);
+                            }
                         }
                     });
+            videoFrames.printToErr();
 
-            ds2.printToErr();
-
-            int chunkSizeBytes = 3;
-
-            DataStream<ChunkedVideoFrame> ds3 =
-                    ds2.flatMap(new FlatMapFunction<VideoFrame, ChunkedVideoFrame>() {
+            // Split video frames into chunks of 1 MB or less.
+            int chunkSizeBytes = 300;
+            DataStream<ChunkedVideoFrame> chunkedVideoFrames =
+                    videoFrames.flatMap(new FlatMapFunction<VideoFrame, ChunkedVideoFrame>() {
                         @Override
                         public void flatMap(VideoFrame in, Collector<ChunkedVideoFrame> out) {
                             int numChunks = (in.data.remaining() - 1) / chunkSizeBytes + 1;
@@ -66,21 +61,28 @@ public class VideoWriterTestJob extends AbstractJob {
                                 ChunkedVideoFrame frame = new ChunkedVideoFrame(in);
                                 frame.data.position(in.data.position() + chunkIndex * chunkSizeBytes);
                                 frame.data.limit(in.data.position() + min((chunkIndex + 1) * chunkSizeBytes, in.data.remaining()));
+
+                                // Jackson serialization does not properly handle ByteBuffer with non-zero position so we need to create a new ByteBuffer.
+                                byte[] chunkData = new byte[frame.data.remaining()];
+                                frame.data.get(chunkData);
+                                frame.data = ByteBuffer.wrap(chunkData);
+
                                 frame.chunkIndex = (short) chunkIndex;
                                 frame.finalChunkIndex = (short) (numChunks - 1);
                             out.collect(frame);
                             }
                         }
                     });
-            ds3.printToErr();
+            chunkedVideoFrames.printToErr();
 
+            // Write chunks to Pravega encoded as JSON.
             FlinkPravegaWriter<ChunkedVideoFrame> flinkPravegaWriter = FlinkPravegaWriter.<ChunkedVideoFrame>builder()
                     .withPravegaConfig(appConfiguration.getPravegaConfig())
                     .forStream(appConfiguration.getOutputStreamConfig().stream)
                     .withSerializationSchema(new ChunkedVideoFrameSerializationSchema())
-                    .withEventRouter(frame -> String.format("%d-%d", frame.camera, frame.ssrc))
+                    .withEventRouter(frame -> String.format("%d", frame.camera))
                     .build();
-            ds3.addSink(flinkPravegaWriter);
+            chunkedVideoFrames.addSink(flinkPravegaWriter);
 
             log.info("Executing {} job", jobName);
             env.execute();
