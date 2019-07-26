@@ -20,6 +20,12 @@ import java.util.Random;
 
 import static java.lang.Math.max;
 
+/**
+ * A Flink job that reads images from multiple cameras stored in a Pravega stream, combines them
+ * into a square grid of images (like a security camera monitor), and writes the resulting
+ * images to another Pravega stream.
+ * Images are chunked into 512 KB chunks to allow for very large images.
+ */
 public class MultiVideoGridJob extends AbstractJob {
     private static Logger log = LoggerFactory.getLogger(MultiVideoGridJob.class);
 
@@ -52,7 +58,7 @@ public class MultiVideoGridJob extends AbstractJob {
                     .process(new ChunkedVideoFrameReassembler());
 
             DataStream<VideoFrame> inVideoFramesWithTimestamps = inVideoFrames.assignTimestampsAndWatermarks(
-                    new BoundedOutOfOrdernessTimestampExtractor<VideoFrame>(Time.milliseconds(100)) {
+                    new BoundedOutOfOrdernessTimestampExtractor<VideoFrame>(Time.milliseconds(2000)) {
                 @Override
                 public long extractTimestamp(VideoFrame element) {
                     return element.timestamp.getTime();
@@ -60,24 +66,25 @@ public class MultiVideoGridJob extends AbstractJob {
             });
             inVideoFramesWithTimestamps.printToErr();
 
-            // Resize all input images.
-            int imageWidth = 50;
-            int imageHeight = 50;
+            // Resize all input images. This will be performed in parallel.
+            int imageWidth = 700;
+            int imageHeight = imageWidth;
             DataStream<VideoFrame> resizedVideoFrames = inVideoFramesWithTimestamps.map(frame -> {
                 ImageResizer resizer = new ImageResizer(imageWidth, imageHeight);
                 frame.data = resizer.resize(frame.data);
+                frame.hash = null;
                 return frame;
             });
-            resizedVideoFrames.printToErr();
+//            resizedVideoFrames.printToErr();
 
             // Aggregate resized images.
-            // For each 100 millisecond window, we take the last image from each camera.
+            // For each time window, we take the last image from each camera.
             // Then these images are combined in a square grid.
-            // To maintain ordering in the output images, we use parallelism 1 for all subsequent operations.
+            // To maintain ordering in the output images, we use parallelism of 1 for all subsequent operations.
             int camera = 1000;
             int ssrc = new Random().nextInt();
             DataStream<VideoFrame> outVideoFrames = resizedVideoFrames
-                    .windowAll(TumblingEventTimeWindows.of(Time.milliseconds(100)))
+                    .windowAll(TumblingEventTimeWindows.of(Time.milliseconds(500)))
                     .aggregate(new ImageAggregator(imageWidth, imageHeight, camera, ssrc))
                     .setParallelism(1);
             outVideoFrames.printToErr();
@@ -142,6 +149,7 @@ public class MultiVideoGridJob extends AbstractJob {
             ImageGridBuilder builder = new ImageGridBuilder(imageWidth, imageHeight, accum.images.size());
             builder.addImages(accum.images);
             videoFrame.data = builder.getOutputImageBytes("png");
+            videoFrame.hash = videoFrame.calculateHash();
             frameNumber++;
             return videoFrame;
         }

@@ -1,5 +1,8 @@
 package io.pravega.example.iiotdemo.flinkprocessor;
 
+import java.security.DigestException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.sql.Timestamp;
 import java.util.Arrays;
 
@@ -16,6 +19,8 @@ public class VideoFrame {
     public int frameNumber;
     // PNG-encoded image.
     public byte[] data;
+    // Truncated SHA-1 hash of data. This is used to confirm that chunking and reassembly do not corrupt the data.
+    public byte[] hash;
 
     public VideoFrame() {
     }
@@ -26,6 +31,7 @@ public class VideoFrame {
         this.timestamp = frame.timestamp;
         this.frameNumber = frame.frameNumber;
         this.data = frame.data;
+        this.hash = frame.hash;
     }
 
     @Override
@@ -42,7 +48,25 @@ public class VideoFrame {
                 ", ssrc=" + ssrc +
                 ", timestamp=" + timestamp +
                 ", frameNumber=" + frameNumber +
+                ", hash=" + Arrays.toString(hash) +
                 ", data(" + data.length + ")=" + dataStr +
                 "}";
+    }
+
+    public byte[] calculateHash() {
+        MessageDigest md;
+        try {
+            md = MessageDigest.getInstance("SHA-1");
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+        return Arrays.copyOf(md.digest(data), 6);
+    }
+
+    public void validateHash() {
+        byte[] calculatedHash = calculateHash();
+        if (!MessageDigest.isEqual(calculatedHash, hash)) {
+            throw new RuntimeException(new DigestException());
+        }
     }
 }

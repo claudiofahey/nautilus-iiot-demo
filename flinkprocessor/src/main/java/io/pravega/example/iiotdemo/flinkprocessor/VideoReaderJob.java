@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.util.Collections;
 
@@ -50,16 +51,28 @@ public class VideoReaderJob extends AbstractJob {
                     .process(new ChunkedVideoFrameReassembler());
 //            videoFrames.printToErr();
 
+            // Write some frames to files for viewing.
+            videoFrames
+                    .filter(frame -> frame.frameNumber < 20)
+                    .map(frame -> {
+                        try (FileOutputStream fos = new FileOutputStream(String.format("/tmp/camera%d-frame%05d.png", frame.camera, frame.frameNumber))) {
+                            fos.write(frame.data);
+                        }
+                        return 0;
+                    });
+
             // Parse image file and obtain metadata.
             DataStream<String> frameInfo = videoFrames.map(frame -> {
                 InputStream inStream = new ByteArrayInputStream(frame.data);
                 BufferedImage inImage = ImageIO.read(inStream);
-                return String.format("%s, %dx%dx%d, %d bytes",
-                        inImage.toString(),
+                return String.format("camera %d, frame %d, %dx%dx%d, %d bytes, %s",
+                        frame.camera,
+                        frame.frameNumber,
                         inImage.getWidth(),
                         inImage.getHeight(),
                         inImage.getColorModel().getNumColorComponents(),
-                        frame.data.length);
+                        frame.data.length,
+                        inImage.toString());
             });
             frameInfo.printToErr();
 

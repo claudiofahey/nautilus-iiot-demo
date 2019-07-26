@@ -33,8 +33,9 @@ public class ChunkedVideoFrameReassembler extends ProcessWindowFunction<ChunkedV
         videoFrame.ssrc = firstChunk.ssrc;
         videoFrame.timestamp = firstChunk.timestamp;
         videoFrame.frameNumber = firstChunk.frameNumber;
-        ByteBuffer buf = ByteBuffer.allocate(totalSize);
+        videoFrame.hash = firstChunk.hash;
 
+        ByteBuffer buf = ByteBuffer.allocate(totalSize);
         short expectedChunkIndex = 0;
         for (ChunkedVideoFrame chunk: elements) {
             if (chunk.finalChunkIndex != firstChunk.finalChunkIndex) {
@@ -62,6 +63,7 @@ public class ChunkedVideoFrameReassembler extends ProcessWindowFunction<ChunkedV
         }
         buf.flip();
         videoFrame.data = buf.array();
+        videoFrame.validateHash();
         out.collect(videoFrame);
     }
 }

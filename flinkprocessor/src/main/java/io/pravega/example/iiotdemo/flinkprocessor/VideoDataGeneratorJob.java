@@ -37,9 +37,9 @@ public class VideoDataGeneratorJob extends AbstractJob {
                     TypeInformation.of(new TypeHint<Tuple2<Integer,Long>>(){}));
 
             // Generate a stream of video frames.
-            int[] cameras = new int[]{0, 1};
+            int[] cameras = new int[]{0, 1, 2, 3};
             int ssrc = new Random().nextInt();
-            int width = 500;
+            int width = 1000;
             int height = width;
             DataStream<VideoFrame> videoFrames =
                     frameNumbers.flatMap(new FlatMapFunction<Tuple2<Integer,Long>, VideoFrame>() {
@@ -52,6 +52,7 @@ public class VideoDataGeneratorJob extends AbstractJob {
                                 frame.timestamp = new Timestamp(in.f1);
                                 frame.frameNumber = in.f0;
                                 frame.data = new ImageGenerator(width, height).generate(frame.camera, frame.frameNumber);
+                                frame.hash = frame.calculateHash();
                                 out.collect(frame);
                             }
                         }

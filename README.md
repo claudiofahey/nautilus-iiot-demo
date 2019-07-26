@@ -135,6 +135,51 @@ Then edit the file `gradle.properties` to include the following line.
 includePravegaCredentials=true
 ```
 
+### Flink Large Video Demo
+
+Run the Flink video data generator job in `flinkprocessor` with the following parameters:
+```
+--jobClass
+io.pravega.example.iiotdemo.flinkprocessor.VideoDataGeneratorJob
+--controller
+tcp://127.0.0.1:9090
+--output-minNumSegments
+6
+--output-stream
+examples/video1
+```
+
+Next, run a streaming Flink job that reads all video streams and combines them into a single video stream
+where each image is composed of the input images in a square grid. 
+Run the Flink app in `flinkprocessor` with the following parameters:
+```
+--jobClass
+io.pravega.example.iiotdemo.flinkprocessor.MultiVideoGridJob
+--controller
+tcp://127.0.0.1:9090
+--parallelism
+2
+--output-minNumSegments
+6
+--input-stream
+examples/video1
+--output-stream
+examples/grid1
+```
+
+Run the Flink video reader job in `flinkprocessor` with the following parameters:
+```
+--jobClass
+io.pravega.example.iiotdemo.flinkprocessor.VideoReaderJob
+--controller
+tcp://127.0.0.1:9090
+--parallelism
+2
+--input-stream
+examples/grid1
+```
+This will write a subset of images to `/tmp/camera*.png`.
+
 ### Installing the Pravega Spark Connectors
 
 The Pravega Spark Connector is not currently available in standard repositories.
