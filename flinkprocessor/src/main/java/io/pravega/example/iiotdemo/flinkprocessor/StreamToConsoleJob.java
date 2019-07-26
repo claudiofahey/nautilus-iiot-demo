@@ -6,6 +6,9 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Display the contents of a Pravega stream as UTF8 strings.
+ */
 public class StreamToConsoleJob extends AbstractJob {
     private static Logger log = LoggerFactory.getLogger(StreamToConsoleJob.class);
 

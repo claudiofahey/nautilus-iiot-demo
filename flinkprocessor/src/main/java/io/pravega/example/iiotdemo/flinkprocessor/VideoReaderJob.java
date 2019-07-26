@@ -9,16 +9,24 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class VideoReaderTestJob extends AbstractJob {
-    private static Logger log = LoggerFactory.getLogger(VideoReaderTestJob.class);
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.InputStream;
+import java.util.Collections;
 
-    public VideoReaderTestJob(AppConfiguration appConfiguration) {
+/**
+ * This job reads a video stream from Pravega and writes frame metadata to the console.
+ */
+public class VideoReaderJob extends AbstractJob {
+    private static Logger log = LoggerFactory.getLogger(VideoReaderJob.class);
+
+    public VideoReaderJob(AppConfiguration appConfiguration) {
         super(appConfiguration);
     }
 
     public void run() {
         try {
-            final String jobName = VideoReaderTestJob.class.getName();
+            final String jobName = VideoReaderJob.class.getName();
             StreamExecutionEnvironment env = initializeFlinkStreaming();
             createStream(appConfiguration.getInputStreamConfig());
 
@@ -40,6 +48,20 @@ public class VideoReaderTestJob extends AbstractJob {
                     .trigger(new ChunkedVideoFrameTrigger())
                     .process(new ChunkedVideoFrameReassembler());
 //            videoFrames.printToErr();
+
+            // Parse image file and obtain metadata.
+            DataStream<String> frameInfo = videoFrames.map(frame -> {
+                int numBytes = frame.data.remaining();
+                InputStream inStream = new ByteBufferInputStream(Collections.singletonList(frame.data));
+                BufferedImage inImage = ImageIO.read(inStream);
+                return String.format("%s, %dx%dx%d, %d bytes",
+                        inImage.toString(),
+                        inImage.getWidth(),
+                        inImage.getHeight(),
+                        inImage.getColorModel().getNumColorComponents(),
+                        numBytes);
+            });
+            frameInfo.printToErr();
 
             log.info("Executing {} job", jobName);
             env.execute();

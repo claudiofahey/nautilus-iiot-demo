@@ -12,16 +12,19 @@ import org.apache.flink.types.Row;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class MultiVideoGridBatchJob extends AbstractJob {
-    private static Logger log = LoggerFactory.getLogger(MultiVideoGridBatchJob.class);
+/**
+ * @Deprecated. Use MultiVideoGridJob instead.
+ */
+public class MultiVideoGridBatchTableJob extends AbstractJob {
+    private static Logger log = LoggerFactory.getLogger(MultiVideoGridBatchTableJob.class);
 
-    public MultiVideoGridBatchJob(AppConfiguration appConfiguration) {
+    public MultiVideoGridBatchTableJob(AppConfiguration appConfiguration) {
         super(appConfiguration);
     }
 
     public void run() {
         try {
-            final String jobName = MultiVideoGridBatchJob.class.getName();
+            final String jobName = MultiVideoGridBatchTableJob.class.getName();
             ExecutionEnvironment env = initializeFlinkBatch();
             BatchTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
             createStream(appConfiguration.getInputStreamConfig());

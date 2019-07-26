@@ -4,6 +4,9 @@ import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.util.Arrays;
 
+/**
+ * A class for storing a single video frame.
+ */
 public class VideoFrame {
     // Unique ID for this video stream.
     public int camera;

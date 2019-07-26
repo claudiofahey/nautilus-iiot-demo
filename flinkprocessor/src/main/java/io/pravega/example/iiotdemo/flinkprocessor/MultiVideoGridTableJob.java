@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Deprecated. Use MultiVideoGridJob instead.
+ * @Deprecated. Use MultiVideoGridJob instead.
  */
 public class MultiVideoGridTableJob extends AbstractJob {
     private static Logger log = LoggerFactory.getLogger(MultiVideoGridTableJob.class);

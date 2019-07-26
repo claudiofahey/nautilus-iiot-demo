@@ -3,9 +3,9 @@ package io.pravega.example.iiotdemo.flinkprocessor;
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
+import java.io.*;
+import java.nio.ByteBuffer;
+import java.util.Collections;
 
 
 /**
@@ -21,22 +21,34 @@ public class ImageResizer {
     }
 
     /**
+     * Resizes images to a fixed size.
      *
      * @param image Image file bytes
      * @return Image file bytes
      */
     public byte[] resize(byte[] image) {
+        ByteArrayInputStream inStream = new ByteArrayInputStream(image);
+        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+        resize(inStream, outStream);
+        return outStream.toByteArray();
+    }
+
+    public ByteBuffer resize(ByteBuffer inByteBuffer) {
+        InputStream inStream = new ByteBufferInputStream(Collections.singletonList(inByteBuffer));
+        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
+        resize(inStream, outStream);
+        return ByteBuffer.wrap(outStream.toByteArray());
+    }
+
+    public void resize(InputStream inStream, OutputStream outStream) {
         try {
-            ByteArrayInputStream inStream = new ByteArrayInputStream(image);
             BufferedImage inImage = ImageIO.read(inStream);
             Image scaledImage = inImage.getScaledInstance(outputWidth, outputHeight, Image.SCALE_SMOOTH);
             BufferedImage outImage = new BufferedImage(outputWidth, outputHeight, inImage.getType());
             Graphics2D g2d = outImage.createGraphics();
             g2d.drawImage(scaledImage, 0, 0, null);
             g2d.dispose();
-            ByteArrayOutputStream outStream = new ByteArrayOutputStream();
             ImageIO.write(outImage, "png", outStream);
-            return outStream.toByteArray();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

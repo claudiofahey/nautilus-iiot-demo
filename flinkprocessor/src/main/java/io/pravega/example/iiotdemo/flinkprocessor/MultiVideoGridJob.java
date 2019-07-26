@@ -66,7 +66,7 @@ public class MultiVideoGridJob extends AbstractJob {
             int imageHeight = 50;
             DataStream<VideoFrame> resizedVideoFrames = inVideoFramesWithTimestamps.map(frame -> {
                 ImageResizer resizer = new ImageResizer(imageWidth, imageHeight);
-                frame.data = ByteBuffer.wrap(resizer.resize(frame.data.array()));
+                frame.data = resizer.resize(frame.data);
                 return frame;
             });
             resizedVideoFrames.printToErr();

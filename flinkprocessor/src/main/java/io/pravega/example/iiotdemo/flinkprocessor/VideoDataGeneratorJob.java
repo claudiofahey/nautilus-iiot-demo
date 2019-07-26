@@ -15,16 +15,19 @@ import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.util.Random;
 
-public class VideoWriterTestJob extends AbstractJob {
-    private static Logger log = LoggerFactory.getLogger(VideoWriterTestJob.class);
+/**
+ * This job simulates writing video from multiple cameras to Pravega.
+ */
+public class VideoDataGeneratorJob extends AbstractJob {
+    private static Logger log = LoggerFactory.getLogger(VideoDataGeneratorJob.class);
 
-    public VideoWriterTestJob(AppConfiguration appConfiguration) {
+    public VideoDataGeneratorJob(AppConfiguration appConfiguration) {
         super(appConfiguration);
     }
 
     public void run() {
         try {
-            final String jobName = VideoWriterTestJob.class.getName();
+            final String jobName = VideoDataGeneratorJob.class.getName();
             StreamExecutionEnvironment env = initializeFlinkStreaming();
             createStream(appConfiguration.getOutputStreamConfig());
 
