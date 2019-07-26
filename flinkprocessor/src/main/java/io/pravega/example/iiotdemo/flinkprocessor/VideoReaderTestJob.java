@@ -33,7 +33,7 @@ public class VideoReaderTestJob extends AbstractJob {
                     .keyBy("camera", "ssrc", "timestamp", "frameNumber")
                     .window(ProcessingTimeSessionWindows.withGap(Time.seconds(10)))
                     .trigger(new ChunkedVideoFrameTrigger())
-                    .process(new ChunkedVideoFrameProcessWindowFunction());
+                    .process(new ChunkedVideoFrameReassembler());
             videoFrames.printToErr();
 
             log.info("Executing {} job", jobName);

@@ -7,6 +7,7 @@ import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.timestamps.BoundedOutOfOrdernessTimestampExtractor;
 import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.slf4j.Logger;
@@ -43,10 +44,18 @@ public class MultiVideoGridJob2 extends AbstractJob {
 
             DataStream<VideoFrame> videoFrames = chunkedVideoFrames.map(frame -> (VideoFrame) frame);
 
+            DataStream<VideoFrame> videoFramesWithTimestamps = videoFrames.assignTimestampsAndWatermarks(
+                    new BoundedOutOfOrdernessTimestampExtractor<VideoFrame>(Time.milliseconds(100)) {
+                @Override
+                public long extractTimestamp(VideoFrame element) {
+                    return element.timestamp.getTime();
+                }
+            });
+
             // Resize all input images.
             int imageWidth = 50;
             int imageHeight = 50;
-            DataStream<VideoFrame> resizedVideoFrames = videoFrames.map(frame -> {
+            DataStream<VideoFrame> resizedVideoFrames = videoFramesWithTimestamps.map(frame -> {
                 ImageResizer resizer = new ImageResizer(imageWidth, imageHeight);
                 frame.data = ByteBuffer.wrap(resizer.resize(frame.data.array()));
                 return frame;
@@ -68,6 +77,7 @@ public class MultiVideoGridJob2 extends AbstractJob {
             DataStream<VideoFrame> outVideoFrames = resizedVideoFrames
                     .windowAll(TumblingEventTimeWindows.of(Time.milliseconds(100)))
                     .aggregate(new ImageAggregator(imageWidth, imageHeight));
+            outVideoFrames.printToErr();
 
             DataStream<ChunkedVideoFrame> outChunkedVideoFrames = outVideoFrames.map(ChunkedVideoFrame::new);
 
@@ -125,6 +135,7 @@ public class MultiVideoGridJob2 extends AbstractJob {
 
         @Override
         public ImageAggregatorAccum merge(ImageAggregatorAccum a, ImageAggregatorAccum b) {
+            // TODO
             return null;
         }
 

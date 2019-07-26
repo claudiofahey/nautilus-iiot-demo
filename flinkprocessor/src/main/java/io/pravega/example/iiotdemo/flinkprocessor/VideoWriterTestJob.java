@@ -15,8 +15,6 @@ import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.util.Random;
 
-import static java.lang.Math.min;
-
 public class VideoWriterTestJob extends AbstractJob {
     private static Logger log = LoggerFactory.getLogger(VideoWriterTestJob.class);
 
@@ -39,7 +37,7 @@ public class VideoWriterTestJob extends AbstractJob {
             // Generate a stream of video frames.
             int[] cameras = new int[]{0, 1};
             int ssrc = new Random().nextInt();
-            int width = 100;
+            int width = 500;
             int height = width;
             DataStream<VideoFrame> videoFrames =
                     frameNumbers.flatMap(new FlatMapFunction<Tuple2<Integer,Long>, VideoFrame>() {
@@ -60,27 +58,7 @@ public class VideoWriterTestJob extends AbstractJob {
 
             // Split video frames into chunks of 1 MB or less. We must account for base-64 encoding, header fields, and JSON. Use 0.5 MB to be safe.
             int chunkSizeBytes = 512*1024;
-            DataStream<ChunkedVideoFrame> chunkedVideoFrames =
-                    videoFrames.flatMap(new FlatMapFunction<VideoFrame, ChunkedVideoFrame>() {
-                        @Override
-                        public void flatMap(VideoFrame in, Collector<ChunkedVideoFrame> out) {
-                            int numChunks = (in.data.remaining() - 1) / chunkSizeBytes + 1;
-                            for (int chunkIndex = 0 ; chunkIndex < numChunks ; chunkIndex++) {
-                                ChunkedVideoFrame frame = new ChunkedVideoFrame(in);
-                                frame.data.position(in.data.position() + chunkIndex * chunkSizeBytes);
-                                frame.data.limit(in.data.position() + min((chunkIndex + 1) * chunkSizeBytes, in.data.remaining()));
-
-                                // Jackson serialization does not properly handle ByteBuffer with non-zero position so we need to create a new ByteBuffer.
-                                byte[] chunkData = new byte[frame.data.remaining()];
-                                frame.data.get(chunkData);
-                                frame.data = ByteBuffer.wrap(chunkData);
-
-                                frame.chunkIndex = (short) chunkIndex;
-                                frame.finalChunkIndex = (short) (numChunks - 1);
-                            out.collect(frame);
-                            }
-                        }
-                    });
+            DataStream<ChunkedVideoFrame> chunkedVideoFrames = videoFrames.flatMap(new VideoFrameChunker(chunkSizeBytes));
             chunkedVideoFrames.printToErr();
 
             // Write chunks to Pravega encoded as JSON.
@@ -98,4 +76,5 @@ public class VideoWriterTestJob extends AbstractJob {
             throw new RuntimeException(e);
         }
     }
+
 }
