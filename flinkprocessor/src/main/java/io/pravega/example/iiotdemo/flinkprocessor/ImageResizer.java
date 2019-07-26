@@ -4,8 +4,6 @@ import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.nio.ByteBuffer;
-import java.util.Collections;
 
 
 /**
@@ -31,13 +29,6 @@ public class ImageResizer {
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         resize(inStream, outStream);
         return outStream.toByteArray();
-    }
-
-    public ByteBuffer resize(ByteBuffer inByteBuffer) {
-        InputStream inStream = new ByteBufferInputStream(Collections.singletonList(inByteBuffer));
-        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-        resize(inStream, outStream);
-        return ByteBuffer.wrap(outStream.toByteArray());
     }
 
     public void resize(InputStream inStream, OutputStream outStream) {

@@ -1,6 +1,5 @@
 package io.pravega.example.iiotdemo.flinkprocessor;
 
-import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.util.Arrays;
 
@@ -16,8 +15,7 @@ public class VideoFrame {
     public Timestamp timestamp;
     public int frameNumber;
     // PNG-encoded image.
-    // Note that Jackson serialization does not properly handle ByteBuffer with non-zero position.
-    public ByteBuffer data;
+    public byte[] data;
 
     public VideoFrame() {
     }
@@ -27,27 +25,24 @@ public class VideoFrame {
         this.ssrc = frame.ssrc;
         this.timestamp = frame.timestamp;
         this.frameNumber = frame.frameNumber;
-        this.data = frame.data.duplicate();
+        this.data = frame.data;
     }
 
     @Override
     public String toString() {
-        int sizeToPrint = data.remaining();
+        int sizeToPrint = data.length;
         int maxSizeToPrint = 10;
         if (sizeToPrint > maxSizeToPrint) {
             sizeToPrint = maxSizeToPrint;
         }
-        byte[] dataBytes = new byte[sizeToPrint];
-        int orgPosition = data.position();
-        data.get(dataBytes);
-        data.position(orgPosition);
+        byte[] dataBytes = Arrays.copyOf(data, sizeToPrint);
         String dataStr = Arrays.toString(dataBytes);
         return "VideoFrame{" +
                 "camera=" + camera +
                 ", ssrc=" + ssrc +
                 ", timestamp=" + timestamp +
                 ", frameNumber=" + frameNumber +
-                ", data(" + data.remaining() + ")=" + dataStr +
+                ", data(" + data.length + ")=" + dataStr +
                 "}";
     }
 }

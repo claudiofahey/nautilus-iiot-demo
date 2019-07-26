@@ -13,7 +13,6 @@ import org.apache.flink.streaming.api.windowing.time.Time;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.util.HashMap;
 import java.util.Map;
@@ -142,14 +141,14 @@ public class MultiVideoGridJob extends AbstractJob {
             videoFrame.frameNumber = frameNumber;
             ImageGridBuilder builder = new ImageGridBuilder(imageWidth, imageHeight, accum.images.size());
             builder.addImages(accum.images);
-            videoFrame.data = ByteBuffer.wrap(builder.getOutputImageBytes("png"));
+            videoFrame.data = builder.getOutputImageBytes("png");
             frameNumber++;
             return videoFrame;
         }
 
         @Override
         public ImageAggregatorAccum add(VideoFrame value, ImageAggregatorAccum accum) {
-            accum.images.put(value.camera, value.data.array());
+            accum.images.put(value.camera, value.data);
             accum.timestamp = new Timestamp(max(accum.timestamp.getTime(), value.timestamp.getTime()));
             return accum;
         }

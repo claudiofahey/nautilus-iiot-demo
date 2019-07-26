@@ -11,7 +11,6 @@ import org.apache.flink.util.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.util.Random;
 
@@ -52,7 +51,7 @@ public class VideoDataGeneratorJob extends AbstractJob {
                                 frame.ssrc = ssrc + camera;
                                 frame.timestamp = new Timestamp(in.f1);
                                 frame.frameNumber = in.f0;
-                                frame.data = ByteBuffer.wrap(new ImageGenerator(width, height).generate(frame.camera, frame.frameNumber));
+                                frame.data = new ImageGenerator(width, height).generate(frame.camera, frame.frameNumber);
                                 out.collect(frame);
                             }
                         }

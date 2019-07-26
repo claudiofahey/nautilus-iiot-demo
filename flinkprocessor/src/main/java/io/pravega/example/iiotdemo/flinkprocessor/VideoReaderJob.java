@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Collections;
 
@@ -51,15 +52,14 @@ public class VideoReaderJob extends AbstractJob {
 
             // Parse image file and obtain metadata.
             DataStream<String> frameInfo = videoFrames.map(frame -> {
-                int numBytes = frame.data.remaining();
-                InputStream inStream = new ByteBufferInputStream(Collections.singletonList(frame.data));
+                InputStream inStream = new ByteArrayInputStream(frame.data);
                 BufferedImage inImage = ImageIO.read(inStream);
                 return String.format("%s, %dx%dx%d, %d bytes",
                         inImage.toString(),
                         inImage.getWidth(),
                         inImage.getHeight(),
                         inImage.getColorModel().getNumColorComponents(),
-                        numBytes);
+                        frame.data.length);
             });
             frameInfo.printToErr();
 

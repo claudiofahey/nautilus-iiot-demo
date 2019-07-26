@@ -27,13 +27,13 @@ public class ChunkedVideoFrameReassembler extends ProcessWindowFunction<ChunkedV
         }
         ChunkedVideoFrame firstChunk = it.next();
 
-        int totalSize = StreamSupport.stream(elements.spliterator(), false).mapToInt((e) -> e.data.remaining()).sum();
+        int totalSize = StreamSupport.stream(elements.spliterator(), false).mapToInt((e) -> e.data.length).sum();
         VideoFrame videoFrame = new VideoFrame();
         videoFrame.camera = firstChunk.camera;
         videoFrame.ssrc = firstChunk.ssrc;
         videoFrame.timestamp = firstChunk.timestamp;
         videoFrame.frameNumber = firstChunk.frameNumber;
-        videoFrame.data = ByteBuffer.allocate(totalSize);
+        ByteBuffer buf = ByteBuffer.allocate(totalSize);
 
         short expectedChunkIndex = 0;
         for (ChunkedVideoFrame chunk: elements) {
@@ -52,7 +52,7 @@ public class ChunkedVideoFrameReassembler extends ProcessWindowFunction<ChunkedV
                         "chunkIndex ({0}) does not match the expected value ({1})",
                         chunk.chunkIndex, expectedChunkIndex));
             }
-            videoFrame.data.put(chunk.data);
+            buf.put(chunk.data);
             expectedChunkIndex++;
         }
         if (expectedChunkIndex != firstChunk.finalChunkIndex + 1) {
@@ -60,7 +60,8 @@ public class ChunkedVideoFrameReassembler extends ProcessWindowFunction<ChunkedV
                     "Number of chunks received ({0}) does not match expected value ({1})",
                     expectedChunkIndex, firstChunk.finalChunkIndex + 1));
         }
-        videoFrame.data.flip();
+        buf.flip();
+        videoFrame.data = buf.array();
         out.collect(videoFrame);
     }
 }
