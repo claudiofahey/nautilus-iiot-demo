@@ -1,5 +1,6 @@
 package io.pravega.example.iiotdemo.flinkprocessor;
 
+import io.pravega.client.stream.StreamCut;
 import io.pravega.connectors.flink.FlinkPravegaReader;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -21,9 +22,13 @@ public class VideoReaderTestJob extends AbstractJob {
             StreamExecutionEnvironment env = initializeFlinkStreaming();
             createStream(appConfiguration.getInputStreamConfig());
 
+            // Start at the current tail.
+            StreamCut startStreamCut = getStreamInfo(appConfiguration.getInputStreamConfig().stream).getTailStreamCut();
+//            StreamCut startStreamCut = StreamCut.UNBOUNDED;
+
             FlinkPravegaReader<ChunkedVideoFrame> flinkPravegaReader = FlinkPravegaReader.<ChunkedVideoFrame>builder()
                     .withPravegaConfig(appConfiguration.getPravegaConfig())
-                    .forStream(appConfiguration.getInputStreamConfig().stream)
+                    .forStream(appConfiguration.getInputStreamConfig().stream, startStreamCut, StreamCut.UNBOUNDED)
                     .withDeserializationSchema(new ChunkedVideoFrameDeserializationSchema())
                     .build();
             DataStream<ChunkedVideoFrame> chunkedVideoFrames = env.addSource(flinkPravegaReader);
@@ -34,7 +39,7 @@ public class VideoReaderTestJob extends AbstractJob {
                     .window(ProcessingTimeSessionWindows.withGap(Time.seconds(10)))
                     .trigger(new ChunkedVideoFrameTrigger())
                     .process(new ChunkedVideoFrameReassembler());
-            videoFrames.printToErr();
+//            videoFrames.printToErr();
 
             log.info("Executing {} job", jobName);
             env.execute();
