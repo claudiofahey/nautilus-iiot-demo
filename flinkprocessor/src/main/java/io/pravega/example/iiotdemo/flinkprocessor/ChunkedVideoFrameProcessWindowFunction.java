@@ -1,6 +1,5 @@
 package io.pravega.example.iiotdemo.flinkprocessor;
 
-
 import org.apache.flink.api.java.tuple.Tuple;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
@@ -9,6 +8,9 @@ import org.apache.flink.util.Collector;
 import java.nio.ByteBuffer;
 import java.util.stream.StreamSupport;
 
+/**
+ * A ProcessWindowFunction that merges ChunkedVideoFrame.
+ */
 public class ChunkedVideoFrameProcessWindowFunction extends ProcessWindowFunction<ChunkedVideoFrame, VideoFrame, Tuple, TimeWindow> {
     @Override
     public void process(Tuple key, Context context, Iterable<ChunkedVideoFrame> elements, Collector<VideoFrame> out) throws Exception {

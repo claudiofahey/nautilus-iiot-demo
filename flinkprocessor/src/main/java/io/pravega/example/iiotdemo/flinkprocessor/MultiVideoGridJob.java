@@ -31,22 +31,22 @@ public class MultiVideoGridJob extends AbstractJob {
     public void run() {
         try {
             final String jobName = MultiVideoGridJob.class.getName();
-            // TODO: Job does not work with parallelism > 1
             StreamExecutionEnvironment env = initializeFlinkStreaming();
             StreamTableEnvironment tableEnv = TableEnvironment.getTableEnvironment(env);
             createStream(appConfiguration.getInputStreamConfig());
             createStream(appConfiguration.getOutputStreamConfig());
-            StreamCut tailStreamCut = getStreamInfo(appConfiguration.getInputStreamConfig().stream).getTailStreamCut();
-//            StreamCut tailStreamCut = StreamCut.UNBOUNDED;
+            // Start at the current tail.
+            StreamCut startStreamCut = getStreamInfo(appConfiguration.getInputStreamConfig().stream).getTailStreamCut();
+//            StreamCut startStreamCut = StreamCut.UNBOUNDED;
             TableSchema inputSchema = TableSchema.builder()
                     .field("timestamp", Types.SQL_TIMESTAMP())
-                    .field("frame_number", Types.INT())
+                    .field("frameNumber", Types.INT())
                     .field("camera", Types.INT())
                     .field("ssrc", Types.INT())
                     .field("data", Types.PRIMITIVE_ARRAY(Types.BYTE()))     // PNG file bytes
                     .build();
             FlinkPravegaJsonTableSource source = FlinkPravegaJsonTableSource.builder()
-                    .forStream(appConfiguration.getInputStreamConfig().stream, tailStreamCut, StreamCut.UNBOUNDED)
+                    .forStream(appConfiguration.getInputStreamConfig().stream, startStreamCut, StreamCut.UNBOUNDED)
                     .withPravegaConfig(appConfiguration.getPravegaConfig())
                     .failOnMissingField(true)
                     .withRowtimeAttribute("timestamp", new ExistingField("timestamp"), new BoundedOutOfOrderTimestamps(100L))
@@ -55,27 +55,28 @@ public class MultiVideoGridJob extends AbstractJob {
             tableEnv.registerTableSource("video", source);
             Table t1 = tableEnv.scan("video");
             t1.printSchema();
+//            tableEnv.toAppendStream(t1.select("camera, ssrc, frameNumber, timestamp"), Row.class).printToErr();
 
+            // Resize all input images.
             int imageWidth = 100;
             int imageHeight = 100;
             tableEnv.registerFunction("ImageResizer", new ImageResizerUDF(imageWidth, imageHeight));
-            tableEnv.registerFunction("ImageAggregator", new ImageAggregator(imageWidth, imageHeight));
-
-            // Resize all input images.
-            Table t2 = t1.select("timestamp, camera, ImageResizer(data) as data");
+            Table t2 = t1.select("camera, ssrc, frameNumber, timestamp, ImageResizer(data) as data");
             t2.printSchema();
+            tableEnv.toAppendStream(t2.select("camera, ssrc, frameNumber, timestamp"), Row.class).printToErr();
 
             // Aggregate resized images.
             // For each 100 millisecond window, we take the last image from each camera.
             // Then these images are combined in a square grid.
+            // TODO: The window is never triggered if parallelism > 1. See https://emcnautilus.slack.com/archives/C0LJMGMNH/p1559586022017100.
+            tableEnv.registerFunction("ImageAggregator", new ImageAggregator(imageWidth, imageHeight));
             Table t3 = t2
                     .window(Tumble.over("100.millis").on("timestamp").as("w"))
                     .groupBy("w")
-                    .select("w.end as timestamp, 0 as camera, 0 as frame_number, 0 as ssrc, '' as routing_key" +
+                    .select("0 as camera, 0 as ssrc, 0 as frameNumber, w.end as timestamp, '' as routing_key" +
                             ", ImageAggregator(camera, data) as data");
             t3.printSchema();
-
-//            tableEnv.toAppendStream(t3, Row.class).printToErr();
+            tableEnv.toAppendStream(t3.select("timestamp"), Row.class).printToErr();
 
             // Write output to new Pravega stream
             FlinkPravegaJsonTableSink sink = FlinkPravegaJsonTableSink.builder()

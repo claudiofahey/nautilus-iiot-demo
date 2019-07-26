@@ -83,7 +83,7 @@ public class AppConfiguration {
             stream = pravegaConfig.resolve(params.get(argPrefix + "stream", "default"));
             targetRate = params.getInt(argPrefix + "targetRate", 100000);  // data rate in KB/sec
             scaleFactor = params.getInt(argPrefix + "scaleFactor", 2);
-            minNumSegments = params.getInt(argPrefix + "minNumSegments", 1);
+            minNumSegments = params.getInt(argPrefix + "minNumSegments", 2);
         }
     }
 }

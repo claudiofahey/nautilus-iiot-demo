@@ -4,6 +4,9 @@ import org.apache.flink.streaming.api.windowing.triggers.Trigger;
 import org.apache.flink.streaming.api.windowing.triggers.TriggerResult;
 import org.apache.flink.streaming.api.windowing.windows.Window;
 
+/**
+ * A Trigger that immediately fires when a final chunk is received.
+ */
 public class ChunkedVideoFrameTrigger extends Trigger<ChunkedVideoFrame, Window> {
     @Override
     public TriggerResult onElement(ChunkedVideoFrame element, long timestamp, Window window, TriggerContext ctx) throws Exception {

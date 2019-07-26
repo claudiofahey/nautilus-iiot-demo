@@ -2,6 +2,9 @@ package io.pravega.example.iiotdemo.flinkprocessor;
 
 import io.pravega.connectors.flink.FlinkPravegaWriter;
 import org.apache.flink.api.common.functions.FlatMapFunction;
+import org.apache.flink.api.common.typeinfo.TypeHint;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
+import org.apache.flink.api.java.tuple.Tuple2;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.util.Collector;
@@ -10,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.sql.Timestamp;
+import java.util.Random;
 
 import static java.lang.Math.min;
 
@@ -26,23 +30,27 @@ public class VideoWriterTestJob extends AbstractJob {
             StreamExecutionEnvironment env = initializeFlinkStreaming();
             createStream(appConfiguration.getOutputStreamConfig());
 
-            // Generate a stream of sequential frame numbers.
-            DataStream<Integer> frameNumbers = env.fromElements(0, 1, 2, 3);
+            // Generate a stream of sequential frame numbers along with timestamps.
+            double framesPerSec = 1.0;
+            DataStream<Tuple2<Integer,Long>> frameNumbers = env.fromCollection(
+                    new FrameNumberIterator(framesPerSec),
+                    TypeInformation.of(new TypeHint<Tuple2<Integer,Long>>(){}));
 
             // Generate a stream of video frames.
-            int width = 10;
+            int[] cameras = new int[]{0, 1};
+            int ssrc = new Random().nextInt();
+            int width = 100;
             int height = width;
-            int[] cameras = new int[]{10, 20};
             DataStream<VideoFrame> videoFrames =
-                    frameNumbers.flatMap(new FlatMapFunction<Integer, VideoFrame>() {
+                    frameNumbers.flatMap(new FlatMapFunction<Tuple2<Integer,Long>, VideoFrame>() {
                         @Override
-                        public void flatMap(Integer frameNumber, Collector<VideoFrame> out) {
+                        public void flatMap(Tuple2<Integer,Long> in, Collector<VideoFrame> out) {
                             for (int camera: cameras) {
                                 VideoFrame frame = new VideoFrame();
                                 frame.camera = camera;
-                                frame.ssrc = 0;
-                                frame.timestamp = new Timestamp(System.currentTimeMillis());
-                                frame.frameNumber = frameNumber;
+                                frame.ssrc = ssrc + camera;
+                                frame.timestamp = new Timestamp(in.f1);
+                                frame.frameNumber = in.f0;
                                 frame.data = ByteBuffer.wrap(new ImageGenerator(width, height).generate(frame.camera, frame.frameNumber));
                                 out.collect(frame);
                             }
@@ -50,8 +58,8 @@ public class VideoWriterTestJob extends AbstractJob {
                     });
             videoFrames.printToErr();
 
-            // Split video frames into chunks of 1 MB or less.
-            int chunkSizeBytes = 300;
+            // Split video frames into chunks of 1 MB or less. We must account for base-64 encoding, header fields, and JSON. Use 0.5 MB to be safe.
+            int chunkSizeBytes = 512*1024;
             DataStream<ChunkedVideoFrame> chunkedVideoFrames =
                     videoFrames.flatMap(new FlatMapFunction<VideoFrame, ChunkedVideoFrame>() {
                         @Override

@@ -7,12 +7,13 @@ import java.util.Arrays;
 public class VideoFrame {
     // Unique ID for this video stream.
     public int camera;
-    // Random source identifier used to avoid corruption if multiple sources use the same camera value.
+    // Random source identifier used to avoid corruption if multiple sources use the same camera frameNumber.
     // See https://tools.ietf.org/html/rfc3550.
     public int ssrc;
     public Timestamp timestamp;
     public int frameNumber;
     // PNG-encoded image.
+    // Note that Jackson serialization does not properly handle ByteBuffer with non-zero position.
     public ByteBuffer data;
 
     public VideoFrame() {
@@ -43,7 +44,7 @@ public class VideoFrame {
                 ", ssrc=" + ssrc +
                 ", timestamp=" + timestamp +
                 ", frameNumber=" + frameNumber +
-                ", data(" + data.position() + "," + data.remaining() + ")=" + dataStr +
+                ", data(" + data.remaining() + ")=" + dataStr +
                 "}";
     }
 }
