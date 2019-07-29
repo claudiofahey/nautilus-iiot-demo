@@ -1,4 +1,4 @@
-package io.pravega.example.iiotdemo.flinkprocessor;
+package io.pravega.example.videoprocessor;
 
 import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;

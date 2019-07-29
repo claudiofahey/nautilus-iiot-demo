@@ -1,4 +1,4 @@
-package io.pravega.example.iiotdemo.flinkprocessor;
+package io.pravega.example.videoprocessor;
 
 import org.apache.flink.api.java.tuple.Tuple2;
 

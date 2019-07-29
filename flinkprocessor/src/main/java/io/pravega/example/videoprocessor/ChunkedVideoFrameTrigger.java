@@ -1,4 +1,4 @@
-package io.pravega.example.iiotdemo.flinkprocessor;
+package io.pravega.example.videoprocessor;
 
 import org.apache.flink.streaming.api.windowing.triggers.Trigger;
 import org.apache.flink.streaming.api.windowing.triggers.TriggerResult;

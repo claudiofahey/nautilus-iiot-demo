@@ -1,8 +1,10 @@
-package io.pravega.example.iiotdemo.flinkprocessor;
+package io.pravega.example.videoprocessor;
 
 import io.pravega.client.stream.StreamCut;
 import io.pravega.connectors.flink.FlinkPravegaReader;
 import io.pravega.connectors.flink.FlinkPravegaWriter;
+import io.pravega.example.iiotdemo.flinkprocessor.AbstractJob;
+import io.pravega.example.iiotdemo.flinkprocessor.AppConfiguration;
 import org.apache.flink.api.common.functions.AggregateFunction;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;

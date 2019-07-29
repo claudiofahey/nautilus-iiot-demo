@@ -1,4 +1,4 @@
-package io.pravega.example.iiotdemo.flinkprocessor;
+package io.pravega.example.videoprocessor;
 
 public class ChunkSequenceException extends RuntimeException {
     public ChunkSequenceException(String s) {

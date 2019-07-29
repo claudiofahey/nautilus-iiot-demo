@@ -1,6 +1,8 @@
-package io.pravega.example.iiotdemo.flinkprocessor;
+package io.pravega.example.videoprocessor;
 
 import io.pravega.connectors.flink.FlinkPravegaJsonTableSource;
+import io.pravega.example.iiotdemo.flinkprocessor.AbstractJob;
+import io.pravega.example.iiotdemo.flinkprocessor.AppConfiguration;
 import org.apache.flink.api.java.DataSet;
 import org.apache.flink.api.java.ExecutionEnvironment;
 import org.apache.flink.table.api.Table;

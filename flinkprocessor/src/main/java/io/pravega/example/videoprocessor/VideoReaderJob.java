@@ -1,7 +1,8 @@
-package io.pravega.example.iiotdemo.flinkprocessor;
+package io.pravega.example.videoprocessor;
 
 import io.pravega.client.stream.StreamCut;
 import io.pravega.connectors.flink.FlinkPravegaReader;
+import io.pravega.example.iiotdemo.flinkprocessor.*;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.windowing.assigners.ProcessingTimeSessionWindows;
@@ -14,7 +15,6 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
-import java.util.Collections;
 
 /**
  * This job reads a video stream from Pravega and writes frame metadata to the console.

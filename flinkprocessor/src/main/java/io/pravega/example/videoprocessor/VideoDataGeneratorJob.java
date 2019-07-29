@@ -1,6 +1,8 @@
-package io.pravega.example.iiotdemo.flinkprocessor;
+package io.pravega.example.videoprocessor;
 
 import io.pravega.connectors.flink.FlinkPravegaWriter;
+import io.pravega.example.iiotdemo.flinkprocessor.AbstractJob;
+import io.pravega.example.iiotdemo.flinkprocessor.AppConfiguration;
 import org.apache.flink.api.common.functions.FlatMapFunction;
 import org.apache.flink.api.common.typeinfo.TypeHint;
 import org.apache.flink.api.common.typeinfo.TypeInformation;

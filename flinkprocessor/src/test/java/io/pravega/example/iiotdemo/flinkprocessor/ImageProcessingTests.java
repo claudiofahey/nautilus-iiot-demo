@@ -1,5 +1,8 @@
 package io.pravega.example.iiotdemo.flinkprocessor;
 
+import io.pravega.example.videoprocessor.ImageGenerator;
+import io.pravega.example.videoprocessor.ImageGridBuilder;
+import io.pravega.example.videoprocessor.ImageResizer;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -9,7 +12,6 @@ import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
-import javax.imageio.stream.FileImageOutputStream;
 import javax.imageio.stream.MemoryCacheImageOutputStream;
 import java.awt.*;
 import java.awt.image.BufferedImage;

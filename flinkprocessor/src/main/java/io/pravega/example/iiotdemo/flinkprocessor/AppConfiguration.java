@@ -74,9 +74,9 @@ public class AppConfiguration {
     }
 
     public static class StreamConfig {
-        protected Stream stream;
-        protected int targetRate;
-        protected int scaleFactor;
+        public Stream stream;
+        public int targetRate;
+        public int scaleFactor;
         protected int minNumSegments;
 
         public StreamConfig(PravegaConfig pravegaConfig, String argPrefix, ParameterTool params) {
