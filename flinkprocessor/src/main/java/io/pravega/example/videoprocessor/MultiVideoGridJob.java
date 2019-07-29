@@ -3,6 +3,7 @@ package io.pravega.example.videoprocessor;
 import io.pravega.client.stream.StreamCut;
 import io.pravega.connectors.flink.FlinkPravegaReader;
 import io.pravega.connectors.flink.FlinkPravegaWriter;
+import io.pravega.connectors.flink.PravegaWriterMode;
 import io.pravega.example.iiotdemo.flinkprocessor.AbstractJob;
 import io.pravega.example.iiotdemo.flinkprocessor.AppConfiguration;
 import org.apache.flink.api.common.functions.AggregateFunction;
@@ -102,6 +103,7 @@ public class MultiVideoGridJob extends AbstractJob {
                     .forStream(appConfiguration.getOutputStreamConfig().stream)
                     .withSerializationSchema(new ChunkedVideoFrameSerializationSchema())
                     .withEventRouter(frame -> String.format("%d", frame.camera))
+                    .withWriterMode(PravegaWriterMode.ATLEAST_ONCE)
                     .build();
             outChunkedVideoFrames
                     .addSink(flinkPravegaWriter)

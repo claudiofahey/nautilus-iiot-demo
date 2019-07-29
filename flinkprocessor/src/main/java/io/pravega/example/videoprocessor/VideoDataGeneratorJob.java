@@ -1,6 +1,7 @@
 package io.pravega.example.videoprocessor;
 
 import io.pravega.connectors.flink.FlinkPravegaWriter;
+import io.pravega.connectors.flink.PravegaWriterMode;
 import io.pravega.example.iiotdemo.flinkprocessor.AbstractJob;
 import io.pravega.example.iiotdemo.flinkprocessor.AppConfiguration;
 import org.apache.flink.api.common.functions.FlatMapFunction;
@@ -72,6 +73,7 @@ public class VideoDataGeneratorJob extends AbstractJob {
                     .forStream(appConfiguration.getOutputStreamConfig().stream)
                     .withSerializationSchema(new ChunkedVideoFrameSerializationSchema())
                     .withEventRouter(frame -> String.format("%d", frame.camera))
+                    .withWriterMode(PravegaWriterMode.ATLEAST_ONCE)
                     .build();
             chunkedVideoFrames.addSink(flinkPravegaWriter);
 
