@@ -1,6 +1,8 @@
 
 # Storing and Processing Video in Pravega with Flink
 
+# THE CODE IN THIS DIRECTORY HAS BEEN DEPRECATED. VIDEO PROCESSING CODE IS NOW IN <https://github.com/pravega/video-samples>.
+
 ## Overview
 
 The Pravega Event API is limited to 1 MiB events. 
