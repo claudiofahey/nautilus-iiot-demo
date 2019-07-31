@@ -61,7 +61,7 @@ public class MultiVideoGridJob extends AbstractJob {
                     .process(new ChunkedVideoFrameReassembler());
 
             DataStream<VideoFrame> inVideoFramesWithTimestamps = inVideoFrames.assignTimestampsAndWatermarks(
-                    new BoundedOutOfOrdernessTimestampExtractor<VideoFrame>(Time.milliseconds(2000)) {
+                    new BoundedOutOfOrdernessTimestampExtractor<VideoFrame>(Time.milliseconds(10000)) {
                 @Override
                 public long extractTimestamp(VideoFrame element) {
                     return element.timestamp.getTime();
@@ -70,7 +70,7 @@ public class MultiVideoGridJob extends AbstractJob {
             inVideoFramesWithTimestamps.printToErr();
 
             // Resize all input images. This will be performed in parallel.
-            int imageWidth = 700;
+            int imageWidth = 50;
             int imageHeight = imageWidth;
             DataStream<VideoFrame> resizedVideoFrames = inVideoFramesWithTimestamps.map(frame -> {
                 ImageResizer resizer = new ImageResizer(imageWidth, imageHeight);

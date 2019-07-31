@@ -42,7 +42,7 @@ public class VideoDataGeneratorJob extends AbstractJob {
             // Generate a stream of video frames.
             int[] cameras = new int[]{0, 1, 2, 3};
             int ssrc = new Random().nextInt();
-            int width = 1000;
+            int width = 100;
             int height = width;
             DataStream<VideoFrame> videoFrames =
                     frameNumbers.flatMap(new FlatMapFunction<Tuple2<Integer,Long>, VideoFrame>() {
@@ -63,7 +63,7 @@ public class VideoDataGeneratorJob extends AbstractJob {
             videoFrames.printToErr();
 
             // Split video frames into chunks of 1 MB or less. We must account for base-64 encoding, header fields, and JSON. Use 0.5 MB to be safe.
-            int chunkSizeBytes = 512*1024;
+            int chunkSizeBytes = 10*1024;
             DataStream<ChunkedVideoFrame> chunkedVideoFrames = videoFrames.flatMap(new VideoFrameChunker(chunkSizeBytes));
             chunkedVideoFrames.printToErr();
 
