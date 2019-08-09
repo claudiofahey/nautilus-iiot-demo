@@ -1,5 +1,7 @@
 # Pravega Gateway
 
+# THE CODE IN THIS DIRECTORY HAS BEEN DEPRECATED. THE LATEST PRAVEGA GRPC GATEWAY IS NOW IN <https://github.com/pravega/pravega-grpc-gateway>.
+
 This is a GRPC server that provides a gateway to a Pravega server.
 It provides **limited** Pravega functionality to any environment that support GRPC, including Python.
 
